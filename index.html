@@ -178,6 +178,19 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 .scard{border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;background:var(--surface);text-align:left;font:inherit;color:inherit}
 .scard:hover{border-color:var(--muted)}
 .scard.on{border-color:var(--accent);background:var(--accent-soft)}
+.scard .nm .badge{font-size:11px;font-weight:500;color:var(--text-2);border:1px solid var(--border);border-radius:99px;padding:0 6px;background:var(--surface)}
+.scard .nm .ed{margin-left:auto;font-size:12px;font-weight:500;padding:2px 8px}
+.sd-list{max-height:min(46vh,380px);overflow:auto;border:1px solid var(--border);border-radius:10px}
+.sd-row,.form label.sd-row{display:grid;grid-template-columns:18px 40px auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--text)}
+.sd-row:last-child{border-bottom:0}
+.sd-row:hover{background:var(--surface-2)}
+.sd-row.on{background:var(--accent-soft)}
+.sd-row .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sd-row .v{color:var(--text-2);font-variant-numeric:tabular-nums;font-size:12px}
+.sd-row .other{font-size:11px;color:var(--muted)}
+.sd-row .meta-m{display:none;font-size:11.5px;color:var(--text-2)}
+.grid2>*{min-width:0}
+@media (max-width:520px){.sd-row,.form label.sd-row{grid-template-columns:18px minmax(0,1fr) auto}.sd-row .dcol,.sd-row .tcol{display:none}.sd-row .t{white-space:normal}.sd-row .meta-m{display:block}}
 .scard .nm{font-weight:700;margin-bottom:4px;display:flex;gap:6px;align-items:center}
 .scard .mt{font-size:12.5px;color:var(--text-2);line-height:1.6}
 .sdetail{border-top:1px solid var(--border);padding-top:14px}
@@ -440,8 +453,8 @@ td.best{font-weight:700;color:var(--text)}
     <div id="deepEmpty" class="card empty hidden"><h2>분석할 성과 데이터가 없어요</h2><p>성과 분석 탭에서 CSV를 불러오거나 샘플 데이터를 넣어 보세요.</p></div>
 
     <div class="card full" id="seriesCard">
-      <div class="chart-head"><h2>📚 시리즈 분석</h2><span class="help" id="seriesSum"></span></div>
-      <p class="help" style="margin:0 0 12px">제목의 「1탄·2탄」, 「ep.3」, 날짜(주간 회고록 : 2026.10.05 ~ …)를 보고 시리즈를 자동으로 묶어요. 게시물을 눌러 시리즈 이름을 직접 정할 수도 있어요.</p>
+      <div class="chart-head"><h2>📚 시리즈 분석</h2><div class="actions"><span class="help" id="seriesSum"></span><button class="btn primary sm" id="newSeriesBtn">+ 시리즈 직접 만들기</button></div></div>
+      <p class="help" style="margin:0 0 12px">제목의 「1탄·2탄」, 「ep.3」, 날짜(주간 회고록 : 2026.10.05 ~ …)를 보고 시리즈를 자동으로 묶어요. <b>제목이 달라도 내가 시리즈라고 생각하는 게시물</b>은 <b>+ 시리즈 직접 만들기</b>로 골라 묶을 수 있고, 카드의 <b>편집</b>으로 게시물을 넣거나 뺄 수 있어요.</p>
       <div class="series-list" id="seriesList"></div>
       <div id="seriesDetail"></div>
     </div>
@@ -541,6 +554,23 @@ td.best{font-weight:700;color:var(--text)}
   </div>
 </dialog>
 
+<!-- 시리즈 만들기/편집 -->
+<dialog id="seriesDlg">
+  <h2 id="seriesDlgTitle">시리즈 만들기</h2>
+  <div class="form">
+    <label class="span">시리즈 이름<input id="sdName" placeholder="예: 취준 브이로그, 운동 꿀팁 모음"></label>
+    <label class="span">게시물 고르기 <span class="help" style="font-size:12px" id="sdCount"></span>
+      <input id="sdSearch" placeholder="제목으로 찾기">
+    </label>
+    <div class="span sd-list" id="sdList"></div>
+  </div>
+  <div class="form-actions">
+    <button class="btn danger left" id="sdDel">시리즈 해제</button>
+    <button class="btn" id="sdCancel">취소</button>
+    <button class="btn primary" id="sdSave">저장</button>
+  </div>
+</dialog>
+
 <!-- 확인 창 -->
 <dialog id="askDlg" style="width:min(420px,calc(100vw - 32px))">
   <p id="askMsg" style="margin:0 0 6px;white-space:pre-wrap;line-height:1.6"></p>
@@ -559,7 +589,7 @@ td.best{font-weight:700;color:var(--text)}
       <li><b>기획하기</b> — 기획안 탭에서 아이디어를 적고, 카드를 끌어서 아이디어 → 기획중 → 제작중 → 업로드 완료로 옮겨요. 날짜를 넣으면 캘린더에 보여요.</li>
       <li><b>레퍼런스 모으기</b> — 참고할 릴스·게시물 링크와 좋았던 점을 저장하고, <b>기획안 만들기</b>로 바로 기획에 연결해요.</li>
       <li><b>성과 넣기</b> — 컴퓨터로 Meta Business Suite(business.facebook.com) → <b>콘텐츠</b> → <b>데이터 내보내기</b>에서 Instagram · CSV로 받은 파일을 성과 분석 탭의 <b>CSV 불러오기</b>로 넣어요. 비즈니스·크리에이터 계정이 필요해요.</li>
-      <li><b>깊게 보기</b> — 심화 분석 탭에서 <b>시리즈별 회차 성과</b>와, 캡션에서 부탁한 행동(댓글·저장·공유·팔로우)이 <b>실제로 효과가 있었는지</b> 확인해요.</li>
+      <li><b>깊게 보기</b> — 심화 분석 탭에서 <b>시리즈별 회차 성과</b>와, 캡션에서 부탁한 행동(댓글·저장·공유·팔로우)이 <b>실제로 효과가 있었는지</b> 확인해요. 「1탄·2탄」처럼 제목이 비슷하면 자동으로 묶이고, <b>제목이 달라도 + 시리즈 직접 만들기</b>로 원하는 게시물을 골라 시리즈로 묶을 수 있어요.</li>
       <li><b>꾸준히 갱신</b> — 일주일에 한 번쯤 새 CSV를 넣으면 같은 게시물은 숫자만 최신으로 바뀌고, 업로드 완료한 기획안과 자동으로 연결돼요.</li>
     </ol>
     <p class="note">🔒 입력한 데이터는 <b>지금 쓰는 브라우저에만</b> 저장되고, 만든 사람을 포함해 다른 누구에게도 보이지 않아요. 브라우저 기록을 지우거나 다른 기기에서 열면 비어 있으니 가끔 <b>백업 저장</b>을 해두세요.</p>
@@ -811,6 +841,7 @@ $('#refDel').addEventListener('click',async ()=>{
   refs=refs.filter(x=>x.id!==editingRef); plans.forEach(p=>p.refIds=(p.refIds||[]).filter(i=>i!==editingRef));
   saveAll(); $('#refDlg').close(); renderRefs();
 });
+
 
 /* ================= 성과: CSV ================= */
 function parseCSV(text){
@@ -1118,6 +1149,7 @@ function buildSeries(list){
   const g={};
   list.forEach(p=>{
     let name,key,manual=false,numbered=false;
+    if(p.series==='__none') return;
     if(p.series){ name=p.series.trim(); key='m:'+name.replace(/\s+/g,'').toLowerCase(); manual=true; }
     else { const b=seriesBase(p.caption); if(!b.key) return; name=b.name; key=b.key; numbered=b.numbered; }
     const s=g[key]=g[key]||{name,key,items:[],manual:false,numbered:false};
@@ -1154,12 +1186,14 @@ function renderSeries(list){
   const inS=new Set(S.flatMap(s=>s.items.map(p=>p.id)));
   const sv=list.filter(p=>inS.has(p.id)), nv=list.filter(p=>!inS.has(p.id));
   $('#seriesSum').innerHTML = S.length ? `시리즈 ${S.length}개 · 시리즈 콘텐츠 평균 조회 <b>${fmt(avg(sv.map(p=>p.views)))}</b> vs 단발 콘텐츠 ${fmt(avg(nv.map(p=>p.views)))}` : '';
-  if(!S.length){ $('#seriesList').innerHTML=''; $('#seriesDetail').innerHTML='<p class="help">아직 시리즈로 묶인 게시물이 없어요. 제목에 「1탄·2탄」을 붙이거나, 게시물을 눌러 시리즈 이름을 정해 보세요.</p>'; return; }
+  lastSeries=S;
+  if(!S.length){ $('#seriesList').innerHTML=''; $('#seriesDetail').innerHTML='<p class="help">아직 시리즈로 묶인 게시물이 없어요. 위의 <b>+ 시리즈 직접 만들기</b>로 게시물을 골라 묶거나, 제목에 「1탄·2탄」을 붙여 보세요.</p>'; return; }
   if(!S.find(s=>s.key===deep.series)) deep.series=S[0].key;
-  $('#seriesList').innerHTML=S.map(s=>`<button class="scard ${s.key===deep.series?'on':''}" data-skey="${esc(s.key)}">
-      <div class="nm">${esc(s.name)}</div>
+  $('#seriesList').innerHTML=S.map(s=>`<div class="scard ${s.key===deep.series?'on':''}" data-skey="${esc(s.key)}" role="button" tabindex="0">
+      <div class="nm">${esc(s.name)} <span class="badge">${s.manual?'직접':'자동'}</span><button class="btn sm ed" data-sedit="${esc(s.key)}">편집</button></div>
       <div class="mt">${s.items.length}회 · 평균 조회 <b>${fmt(s.avgViews)}</b> (계정 평균의 ${s.ratio.toFixed(1)}배)<br>첫 회 대비 마지막 회 ${s.keep!=null?Math.round(s.keep*100)+'%':'–'} · 팔로우 +${full(s.follows)}</div>
-    </button>`).join('');
+    </div>`).join('');
+  lastSeries=S;
   const s=S.find(x=>x.key===deep.series);
   const it=s.items, ins=[];
   const best=it.reduce((a,b)=>b.views>a.views?b:a);
@@ -1192,9 +1226,53 @@ function renderSeries(list){
     mk('cSeries',{type:'bar',data:{labels:it.map(p=>p._label+(p._re?'*':'')),datasets:[barDs(it.map(p=>p.views),css(TYPE_VAR[it[0].type])||css('--s1'))]},options:o});
   }
 }
-$('#seriesList').addEventListener('click',e=>{ const b=e.target.closest('[data-skey]'); if(!b) return; deep.series=b.dataset.skey; renderSeries(posts.map(enrich).filter(p=>deep.type==='all'||p.type===deep.type).sort((a,b)=>a.d-b.d)); });
+$('#seriesList').addEventListener('click',e=>{ const ed=e.target.closest('[data-sedit]'); if(ed){ e.stopPropagation(); return openSeriesDlg(ed.dataset.sedit); } const b=e.target.closest('[data-skey]'); if(!b) return; deep.series=b.dataset.skey; renderSeries(posts.map(enrich).filter(p=>deep.type==='all'||p.type===deep.type).sort((a,b)=>a.d-b.d)); });
 $('#seriesDetail').addEventListener('click',e=>{ const tr=e.target.closest('[data-info]'); if(tr) openInfo(tr.dataset.info); });
 segment('#deepType',v=>{ deep.type=v; renderDeep(); });
+
+/* 시리즈 직접 만들기·편집 */
+let lastSeries=[], sdState=null;
+const autoKeyOf=p=>{ const b=seriesBase(p.caption); return b.numbered?b.key:null; };
+const seriesNameOf=p=>{ if(p.series==='__none') return ''; if(p.series) return p.series; const b=seriesBase(p.caption); return b.numbered?b.name+' (자동)':''; };
+function openSeriesDlg(key){
+  if(!posts.length) return toast('먼저 성과 데이터를 넣어 주세요');
+  const s=key?lastSeries.find(x=>x.key===key):null;
+  const ids=s?s.items.map(p=>p.id):[];
+  sdState={key:key||null,orig:new Set(ids),sel:new Set(ids),autoKey:s&&!s.manual?s.key:null};
+  $('#seriesDlgTitle').textContent=s?'시리즈 편집':'시리즈 직접 만들기';
+  $('#sdName').value=s?s.name:''; $('#sdSearch').value='';
+  $('#sdDel').classList.toggle('hidden',!s);
+  drawSd(); $('#seriesDlg').showModal(); setTimeout(()=>$('#sdName').focus(),0);
+}
+function sdCount(){ const n=sdState.sel.size; $('#sdCount').textContent=`· ${n}개 선택됨`+(n<2?' (2개 이상 골라주세요)':''); }
+function drawSd(){
+  const q=$('#sdSearch').value.trim().toLowerCase();
+  const list=[...posts].sort((a,b)=>new Date(b.date)-new Date(a.date)).filter(p=>!q||(p.caption||'').toLowerCase().includes(q));
+  $('#sdList').innerHTML=list.map(p=>{ const d=new Date(p.date), on=sdState.sel.has(p.id), cur=seriesNameOf(p);
+    return `<label class="sd-row ${on?'on':''}"><input type="checkbox" data-sd="${esc(p.id)}" ${on?'checked':''}><span class="v dcol">${d.getMonth()+1}/${d.getDate()}</span><span class="tcol">${typeTag(p.type)}</span><span class="t">${esc(p.caption||'제목 없음')}${cur&&!on?` <span class="other">· 지금 「${esc(cur)}」</span>`:''}<small class="meta-m">${d.getMonth()+1}/${d.getDate()} · ${esc(p.type)}</small></span><span class="v">${fmt(p.views)}</span></label>`; }).join('')
+    || '<p class="help" style="padding:10px 12px;margin:0">찾는 게시물이 없어요</p>';
+  sdCount();
+}
+$('#sdList').addEventListener('change',e=>{ const c=e.target.closest('[data-sd]'); if(!c) return; c.checked?sdState.sel.add(c.dataset.sd):sdState.sel.delete(c.dataset.sd); c.closest('.sd-row').classList.toggle('on',c.checked); sdCount(); });
+$('#sdSearch').addEventListener('input',drawSd);
+$('#newSeriesBtn').addEventListener('click',()=>openSeriesDlg(null));
+$('#sdCancel').addEventListener('click',()=>$('#seriesDlg').close());
+$('#seriesDlg').addEventListener('cancel',e=>e.preventDefault());
+/* 빠진 게시물: 원래 자동으로 이 시리즈에 묶이던 거면 '시리즈 아님'으로, 아니면 자동 판단으로 되돌림 */
+const releaseOf=p=> sdState.autoKey && autoKeyOf(p)===sdState.autoKey ? '__none' : '';
+$('#sdSave').addEventListener('click',()=>{
+  const name=$('#sdName').value.trim();
+  if(!name){ $('#sdName').focus(); return toast('시리즈 이름을 입력해 주세요'); }
+  if(sdState.sel.size<2) return toast('게시물을 2개 이상 골라주세요');
+  posts.forEach(p=>{ if(sdState.sel.has(p.id)) p.series=name; else if(sdState.orig.has(p.id)) p.series=releaseOf(p); });
+  deep.series='m:'+name.replace(/\s+/g,'').toLowerCase();
+  saveAll(); $('#seriesDlg').close(); renderDeep(); toast(`「${name}」 시리즈를 저장했어요 (${sdState.sel.size}개)`);
+});
+$('#sdDel').addEventListener('click',async ()=>{
+  if(!(await ask('이 시리즈 묶음을 풀까요?\n게시물과 성과 데이터는 그대로 남아요.',{ok:'시리즈 해제'}))) return;
+  posts.forEach(p=>{ if(sdState.orig.has(p.id)) p.series=releaseOf(p); });
+  saveAll(); $('#seriesDlg').close(); renderDeep(); toast('시리즈를 해제했어요');
+});
 
 function renderCTA(list){
   const known=list.map(p=>({p,c:ctaOf(p)})).filter(x=>x.c);
@@ -1258,8 +1336,8 @@ function openInfo(id){
     <div class="help">${pl?`연결된 기획안: <b>${esc(pl.title)}</b>`:'연결된 기획안이 없어요'}</div>
     <div class="form" style="margin-top:14px">
       <label class="span">시리즈 이름 <span class="help" style="font-size:12px">비워두면 제목(1탄·2탄, 날짜)으로 자동 판단해요</span>
-        <input id="infoSeries" list="seriesNames" value="${esc(p.series||'')}" placeholder="${esc(seriesBase(p.caption).numbered?seriesBase(p.caption).name+' (자동)':'예: 진상 학부모썰')}">
-        <datalist id="seriesNames">${[...new Set(posts.map(x=>x.series||(seriesBase(x.caption).numbered?seriesBase(x.caption).name:'')).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+        <input id="infoSeries" list="seriesNames" value="${esc(p.series&&p.series!=='__none'?p.series:'')}" placeholder="${esc(seriesBase(p.caption).numbered?seriesBase(p.caption).name+' (자동)':'예: 진상 학부모썰')}">
+        <datalist id="seriesNames">${[...new Set(posts.map(x=>(x.series!=='__none'&&x.series)||(seriesBase(x.caption).numbered?seriesBase(x.caption).name:'')).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
       </label>
       <label class="span">시청자에게 부탁한 행동 (CTA) <span class="help" style="font-size:12px" id="infoCtaSrc"></span>
         <span class="chips sel" id="infoCta"></span>
@@ -1281,7 +1359,7 @@ $('#infoDlg').addEventListener('click',e=>{
 });
 $('#infoSave').addEventListener('click',()=>{
   const p=postById(infoId); if(!p) return;
-  p.series=$('#infoSeries').value.trim();
+  const nv=$('#infoSeries').value.trim(), ov=p.series&&p.series!=='__none'?p.series:''; if(nv!==ov) p.series=nv;
   if(infoCtaTouched) p.ctaManual=ACTIONS.map(a=>a[0]).filter(k=>infoCta.includes(k));
   saveAll(); $('#infoDlg').close(); renderTab(); toast('저장했어요');
 });
