@@ -173,6 +173,39 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 .stats b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
 .stats span{font-size:12px;color:var(--text-2)}
 @media (max-width:520px){.form{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+/* goals */
+.goalcard h2{font-size:16px;margin:0}
+.goal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.goal-head .actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.goal-head select{max-width:220px}
+.goal-sum{color:var(--text-2);font-size:13px;margin-bottom:12px}
+.goal-sum b{color:var(--text)}
+.goal-rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.grow{background:var(--surface-2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.grow .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.grow .nm{font-size:13px;color:var(--text-2)}
+.grow .st{font-size:12px;font-weight:600;white-space:nowrap}
+.grow .st.ok{color:var(--good)} .grow .st.no{color:var(--bad)} .grow .st.ing{color:var(--accent)} .grow .st.wait{color:var(--text-2)}
+.grow .val{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.grow .val small{font-size:13px;font-weight:400;color:var(--text-2)}
+.gbar{height:8px;background:var(--surface);border-radius:99px;overflow:hidden;position:relative}
+.gbar i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.gbar i.ok{background:var(--good)} .gbar i.no{background:var(--bad)}
+.gbar .fc{position:absolute;top:0;bottom:0;border-right:2px dashed var(--text-2);opacity:.5}
+.grow .note{font-size:12px;color:var(--text-2);line-height:1.5}
+.grow .note button{font:inherit;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+.goal-empty{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.goal-hist{margin-top:14px}
+.goal-hist summary{cursor:pointer;font-size:13px;color:var(--text-2)}
+.goal-quick{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.goal-sep{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:10px;margin-top:4px}
+.goal-sep .btn{margin-left:auto}
+.goal-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.goal-grid label,.goal-grid input,#goalForm>label,#goalForm input{min-width:0;width:100%;box-sizing:border-box}
+#goalForm{grid-template-columns:repeat(2,minmax(0,1fr))}
+.goal-grid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--text-2)}
+.goal-grid .prev{font-size:11.5px;color:var(--muted)}
+@media (max-width:520px){.goal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#goalForm{grid-template-columns:minmax(0,1fr)}.goal-sep .btn{margin-left:0}}
 /* deep analysis */
 .series-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px}
 .scard{border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;background:var(--surface);text-align:left;font:inherit;color:inherit}
@@ -310,6 +343,8 @@ td.best{font-weight:700;color:var(--text)}
         <button class="btn danger" id="clearBtn">성과 삭제</button>
       </div>
     </div>
+
+    <section class="card full goalcard" id="goalCard"></section>
 
     <details class="card full csvguide" id="csvGuide" open>
       <summary><b>📥 CSV 받는 법</b> <span class="help" id="lastImport"></span></summary>
@@ -540,6 +575,26 @@ td.best{font-weight:700;color:var(--text)}
   <div class="form-actions">
     <button class="btn" id="postCancel">취소</button>
     <button class="btn primary" id="postSave">추가</button>
+  </div>
+</dialog>
+
+<!-- 목표 -->
+<dialog id="goalDlg">
+  <h2 id="goalDlgTitle">목표 세우기</h2>
+  <form class="form" id="goalForm">
+    <div class="span goal-quick"><span class="help">기간</span><button type="button" class="chip" data-gq="this">이번 달</button><button type="button" class="chip" data-gq="next">다음 달</button><button type="button" class="chip" data-gq="4w">오늘부터 4주</button></div>
+    <label>시작일<input type="date" name="start" required></label>
+    <label>종료일<input type="date" name="end" required></label>
+    <label>시작일 팔로워 수<input type="number" min="0" name="fStart" placeholder="예: 1,240"></label>
+    <label>종료일 팔로워 수<input type="number" min="0" name="fEnd" placeholder="기간이 끝나면 입력"></label>
+    <div class="span goal-sep"><b>목표 숫자</b><span class="help">보고 싶은 것만 채우고, 나머지는 비워두세요.</span>
+      <button type="button" class="btn sm" id="goalSuggest">지난 기간 기준으로 추천 채우기</button></div>
+    <div class="span goal-grid" id="goalInputs"></div>
+  </form>
+  <div class="form-actions">
+    <button class="btn danger left hidden" id="goalDel">삭제</button>
+    <button class="btn" id="goalCancel">취소</button>
+    <button class="btn primary" id="goalSave">저장</button>
   </div>
 </dialog>
 
@@ -843,6 +898,155 @@ $('#refDel').addEventListener('click',async ()=>{
 });
 
 
+/* ================= 목표 ================= */
+let goals = load('cm-goals-v1', []);
+const saveGoals=()=>store('cm-goals-v1',goals);
+let goalSel=null, editingGoal=null;
+const GM=[
+  {k:'uploads',  l:'업로드 수',   u:'개', f:ps=>ps.length},
+  {k:'reels',    l:'릴스 업로드', u:'개', f:ps=>ps.filter(p=>p.type==='릴스').length},
+  {k:'carousels',l:'캐러셀 업로드',u:'개', f:ps=>ps.filter(p=>p.type==='캐러셀').length},
+  {k:'views',    l:'총 조회수',   u:'회', f:ps=>sum(ps,'views')},
+  {k:'avgViews', l:'평균 조회수', u:'회', f:ps=>ps.length?sum(ps,'views')/ps.length:0, avg:true},
+  {k:'reach',    l:'총 도달',     u:'명', f:ps=>sum(ps,'reach')},
+  {k:'saves',    l:'총 저장',     u:'개', f:ps=>sum(ps,'saves')},
+  {k:'shares',   l:'총 공유',     u:'회', f:ps=>sum(ps,'shares')},
+  {k:'comments', l:'총 댓글',     u:'개', f:ps=>sum(ps,'comments')},
+  {k:'followers',l:'팔로워 증가', u:'명', f:null},
+];
+const dayMs=864e5;
+const pDate=s=>{ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const todayD=()=>{ const t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); };
+function postsIn(a,b){ const s=pDate(a).getTime(), e=pDate(b).getTime()+dayMs; return posts.filter(p=>{ const t=new Date(p.date).getTime(); return t>=s && t<e; }); }
+function prevRange(g){ const len=Math.round((pDate(g.end)-pDate(g.start))/dayMs)+1; const e=new Date(pDate(g.start).getTime()-dayMs), s=new Date(e.getTime()-(len-1)*dayMs); return [ymd(s),ymd(e)]; }
+function niceUp(n){ if(n<=0) return 0; if(n<20) return Math.ceil(n); const m=Math.pow(10,Math.floor(Math.log10(n))-1); return Math.ceil(n/m)*m; }
+const gnum=v=>v===''||v==null||isNaN(+v)?null:+v;
+
+function evalGoal(g){
+  const ps=postsIn(g.start,g.end), T=todayD(), S=pDate(g.start), E=pDate(g.end);
+  const total=Math.round((E-S)/dayMs)+1, ended=T>E, notStarted=T<S;
+  const elapsed=ended?total:notStarted?0:Math.round((T-S)/dayMs)+1;
+  const rows=[];
+  GM.forEach(m=>{
+    const target=gnum(g.targets?.[m.k]); if(target==null||target<=0) return;
+    const r={m,target};
+    if(m.k==='followers'){
+      const fs=gnum(g.fStart), fe=gnum(g.fEnd);
+      r.csv=sum(ps,'follows');
+      if(fs!=null && fe!=null){ r.actual=fe-fs; r.state= r.actual>=target?'ok': ended?'no':'ing'; }
+      else { r.actual=null; r.state='wait'; r.need= fs==null?'start':'end'; }
+    } else {
+      r.actual=m.f(ps);
+      if(r.actual>=target && (!m.avg||ended)) r.state='ok';
+      else if(ended) r.state='no';
+      else if(notStarted) r.state='wait';
+      else { r.state='ing'; r.fc= m.avg ? r.actual : (elapsed? r.actual*total/elapsed : 0); }
+    }
+    rows.push(r);
+  });
+  return {ps,total,elapsed,ended,notStarted,rows,ok:rows.filter(r=>r.state==='ok').length};
+}
+
+function goalRowHtml(r,ev){
+  const {m,target}=r; const st={ok:'✅ 달성',no:'❌ 미달',ing:'⏳ 진행 중',wait:'⏸ 대기'}[r.state];
+  const a=r.actual, ratio=a==null?0:Math.max(0,a/target);
+  let note='';
+  if(m.k==='followers'){
+    if(r.state==='wait') note=`${r.need==='start'?'시작일':'종료일'} 팔로워 수를 넣으면 판정돼요. <button data-gedit="1">입력하기</button>${r.csv?`<br>참고: 이 기간 게시물로 늘어난 팔로우(CSV) ${full(r.csv)}명`:''}`;
+    else note=`${full(gnum(goalCur().fStart))}명 → ${full(gnum(goalCur().fEnd))}명${r.csv?` · 게시물로 늘어난 팔로우(CSV) ${full(r.csv)}명`:''}`;
+  } else if(r.state==='ing'){
+    if(m.avg) note= a>=target?'지금은 목표 이상이에요. 기간이 끝날 때 최종 판정해요.':`목표까지 평균 ${fmt(target-a)}회 더 필요해요.`;
+    else note= r.fc>=target ? `👍 이 속도면 기간 말 약 ${fmt(r.fc)}${m.u} — 달성 예상` : `이 속도면 기간 말 약 ${fmt(r.fc)}${m.u} · 남은 ${ev.total-ev.elapsed}일 동안 ${fmt(target-a)}${m.u} 더 필요해요`;
+  } else if(r.state==='no') note=`달성률 ${Math.round(ratio*100)}% · ${fmt(target-a)}${m.u} 부족했어요`;
+  else if(r.state==='ok') note= a>target?`목표보다 ${fmt(a-target)}${m.u} 더 했어요 (${Math.round(ratio*100)}%)`:'딱 맞췄어요!';
+  else if(r.state==='wait') note='기간이 시작되면 계산해요.';
+  const fcPos = r.state==='ing' && !m.avg && r.fc ? Math.min(100,r.fc/target*100) : null;
+  return `<div class="grow"><div class="top"><span class="nm">${m.l}</span><span class="st ${r.state}">${st}</span></div>
+    <div class="val">${a==null?'–':fmt(a)} <small>/ ${fmt(target)}${m.u}</small></div>
+    <div class="gbar" role="img" aria-label="${m.l} 달성률 ${Math.round(ratio*100)}%"><i class="${r.state==='ok'?'ok':r.state==='no'?'no':''}" style="width:${Math.min(100,ratio*100)}%"></i>${fcPos!=null?`<span class="fc" style="left:${fcPos}%" title="예상"></span>`:''}</div>
+    <div class="note">${note}</div></div>`;
+}
+const goalCur=()=>goals.find(g=>g.id===goalSel);
+const gLabel=g=>`${md(g.start)} ~ ${md(g.end)}`;
+function renderGoals(){
+  const box=$('#goalCard'); const sorted=[...goals].sort((a,b)=>b.start.localeCompare(a.start));
+  if(!goals.length){
+    box.innerHTML=`<div class="goal-empty"><div><h2>🎯 목표</h2><p class="help" style="margin:4px 0 0">기간과 목표 숫자(업로드 수·조회수·팔로워 증가 등)를 정하면, CSV를 넣을 때마다 달성 여부와 예상치를 알려줘요.</p></div><button class="btn primary" id="goalNew">+ 목표 세우기</button></div>`;
+    return;
+  }
+  const t=ymd(todayD());
+  if(!goalCur()) goalSel=(sorted.find(g=>g.start<=t&&t<=g.end)||sorted[0]).id;
+  const g=goalCur(), ev=evalGoal(g);
+  const status= ev.notStarted?`시작 전 · D-${Math.round((pDate(g.start)-todayD())/dayMs)}` : ev.ended?'종료' : `진행 중 · ${ev.elapsed}/${ev.total}일째 · D-${ev.total-ev.elapsed}`;
+  const hist=sorted.map(x=>{ const e=evalGoal(x); return `<tr data-gsel="${esc(x.id)}" style="cursor:pointer"><td class="l">${gLabel(x)}${x.id===goalSel?' ◀':''}</td><td class="l">${e.ended?'종료':e.notStarted?'시작 전':'진행 중'}</td><td>${e.ok} / ${e.rows.length}</td><td>${e.ps.length}개</td></tr>`; }).join('');
+  box.innerHTML=`<div class="goal-head"><h2>🎯 목표 <span class="help" style="font-weight:400">${gLabel(g)}</span></h2>
+      <div class="actions">${goals.length>1?`<select id="goalPick" aria-label="목표 기간 선택">${sorted.map(x=>`<option value="${esc(x.id)}" ${x.id===goalSel?'selected':''}>${gLabel(x)}</option>`).join('')}</select>`:''}
+      <button class="btn sm" data-gedit="1">수정</button><button class="btn sm primary" id="goalNew">+ 새 목표</button></div></div>
+    <div class="goal-sum">${status} · 이 기간 게시물 ${ev.ps.length}개 · <b>${ev.rows.length}개 중 ${ev.ok}개 달성</b>${ev.ended&&ev.rows.length?(ev.ok===ev.rows.length?' 🎉 모두 달성!':''):''}</div>
+    ${ev.rows.length?`<div class="goal-rows">${ev.rows.map(r=>goalRowHtml(r,ev)).join('')}</div>`:`<p class="help">목표 숫자가 비어 있어요. <b>수정</b>에서 채워 주세요.</p>`}
+    ${posts.length?'':'<p class="help" style="margin-top:10px">아직 성과 데이터가 없어서 0으로 보여요. CSV를 넣으면 채워져요.</p>'}
+    ${goals.length>1?`<details class="goal-hist"><summary>지난 목표 기록 보기 (${goals.length}개)</summary><div class="table-wrap"><table><thead><tr><th class="l">기간</th><th class="l">상태</th><th>달성</th><th>게시물</th></tr></thead><tbody>${hist}</tbody></table></div></details>`:''}`;
+}
+$('#goalCard').addEventListener('click',e=>{
+  if(e.target.closest('#goalNew')) return openGoal(null);
+  if(e.target.closest('[data-gedit]')) return openGoal(goalSel);
+  const tr=e.target.closest('[data-gsel]'); if(tr){ goalSel=tr.dataset.gsel; renderGoals(); }
+});
+$('#goalCard').addEventListener('change',e=>{ if(e.target.id==='goalPick'){ goalSel=e.target.value; renderGoals(); } });
+
+function drawGoalInputs(g){
+  const f=$('#goalForm'), a=f.start.value, b=f.end.value;
+  let prev=null; if(a&&b&&a<=b){ const [pa,pb]=prevRange({start:a,end:b}); prev=postsIn(pa,pb); }
+  $('#goalInputs').innerHTML=GM.map(m=>{ const pv= m.f&&prev&&prev.length ? m.f(prev) : null;
+    return `<label>${m.l} (${m.u})<input type="number" min="0" data-gk="${m.k}" value="${g?.targets?.[m.k]??''}" placeholder="비워두면 안 봐요">${pv!=null?`<span class="prev">지난 기간 ${fmt(pv)}</span>`:''}</label>`; }).join('');
+}
+function openGoal(id){
+  const f=$('#goalForm'); f.reset(); editingGoal=id;
+  const g=id?goals.find(x=>x.id===id):null;
+  $('#goalDlgTitle').textContent=g?'목표 수정':'목표 세우기';
+  if(g){ f.start.value=g.start; f.end.value=g.end; f.fStart.value=g.fStart??''; f.fEnd.value=g.fEnd??''; }
+  else setQuick('this');
+  $('#goalDel').classList.toggle('hidden',!g);
+  drawGoalInputs(g); $('#goalDlg').showModal();
+}
+function setQuick(q){
+  const f=$('#goalForm'), t=todayD(); let s,e;
+  if(q==='this'){ s=new Date(t.getFullYear(),t.getMonth(),1); e=new Date(t.getFullYear(),t.getMonth()+1,0); }
+  else if(q==='next'){ s=new Date(t.getFullYear(),t.getMonth()+1,1); e=new Date(t.getFullYear(),t.getMonth()+2,0); }
+  else { s=t; e=new Date(t.getTime()+27*dayMs); }
+  f.start.value=ymd(s); f.end.value=ymd(e);
+}
+const goalTargetsFromForm=()=>Object.fromEntries([...$('#goalInputs').querySelectorAll('[data-gk]')].map(i=>[i.dataset.gk,i.value]));
+$('#goalForm').addEventListener('click',e=>{ const q=e.target.closest('[data-gq]'); if(!q) return; setQuick(q.dataset.gq); drawGoalInputs({targets:goalTargetsFromForm()}); });
+$('#goalForm').addEventListener('change',e=>{ if(e.target.name==='start'||e.target.name==='end') drawGoalInputs({targets:goalTargetsFromForm()}); });
+$('#goalForm').addEventListener('submit',e=>{ e.preventDefault(); $('#goalSave').click(); });
+$('#goalSuggest').addEventListener('click',()=>{
+  const f=$('#goalForm'); if(!f.start.value||!f.end.value||f.start.value>f.end.value) return toast('기간을 먼저 정해 주세요');
+  const [pa,pb]=prevRange({start:f.start.value,end:f.end.value}); const prev=postsIn(pa,pb);
+  if(!prev.length) return toast('바로 전 같은 길이 기간에 게시물이 없어서 추천할 수 없어요');
+  const keys=['uploads','views','avgViews','saves','shares'];
+  keys.forEach(k=>{ const m=GM.find(x=>x.k===k), v=m.f(prev); const inp=$(`#goalInputs [data-gk="${k}"]`);
+    if(!inp.value) inp.value= k==='uploads' ? Math.max(1,Math.round(v)) : niceUp(v*1.1); });
+  toast('지난 기간보다 10% 높게 채웠어요 (업로드 수는 유지)');
+});
+$('#goalCancel').addEventListener('click',()=>$('#goalDlg').close());
+$('#goalDlg').addEventListener('cancel',e=>e.preventDefault());
+$('#goalSave').addEventListener('click',()=>{
+  const f=$('#goalForm'); const start=f.start.value, end=f.end.value;
+  if(!start||!end) return toast('시작일과 종료일을 넣어 주세요');
+  if(start>end) return toast('종료일이 시작일보다 빨라요');
+  const targets={}; Object.entries(goalTargetsFromForm()).forEach(([k,v])=>{ if(gnum(v)!=null&&+v>0) targets[k]=+v; });
+  if(!Object.keys(targets).length) return toast('목표 숫자를 하나 이상 채워 주세요');
+  const data={start,end,fStart:gnum(f.fStart.value),fEnd:gnum(f.fEnd.value),targets};
+  if(targets.followers && data.fStart==null) toast('팔로워 증가는 시작일 팔로워 수가 있어야 계산돼요');
+  if(editingGoal) Object.assign(goals.find(x=>x.id===editingGoal),data); else { const g={id:uid(),createdAt:Date.now(),...data}; goals.push(g); goalSel=g.id; }
+  saveGoals(); $('#goalDlg').close(); renderGoals(); if(!targets.followers||data.fStart!=null) toast('목표를 저장했어요');
+});
+$('#goalDel').addEventListener('click',async ()=>{
+  if(!editingGoal||!(await ask('이 목표를 삭제할까요?',{ok:'삭제'}))) return;
+  goals=goals.filter(x=>x.id!==editingGoal); goalSel=null; saveGoals(); $('#goalDlg').close(); renderGoals();
+});
+
 /* ================= 성과: CSV ================= */
 function parseCSV(text){
   text=text.replace(/^﻿/,'');
@@ -979,7 +1183,7 @@ function renderLastImport(){
 $('#remindDays').value=String(load('cm-remind-days',7));
 $('#remindDays').addEventListener('change',e=>{ store('cm-remind-days',+e.target.value); renderLastImport(); toast(`${e.target.value}일마다 새 CSV를 넣으라고 알려드릴게요`); });
 function renderPerf(){
-  renderLastImport();
+  renderLastImport(); renderGoals();
   const has=posts.length>0;
   $('#perfEmpty').classList.toggle('hidden',has); $('#perfDash').classList.toggle('hidden',!has); $('#perfFilters').classList.toggle('hidden',!has);
   if(!has) return;
@@ -1392,7 +1596,7 @@ $('#postSave').addEventListener('click',()=>{
 
 /* ================= 백업 ================= */
 $('#backupBtn').addEventListener('click',()=>{
-  download(`콘텐츠매니저_백업_${ymd(new Date())}.json`, JSON.stringify({app:'content-manager',version:1,savedAt:new Date().toISOString(),posts,plans,refs},null,1),'application/json');
+  download(`콘텐츠매니저_백업_${ymd(new Date())}.json`, JSON.stringify({app:'content-manager',version:1,savedAt:new Date().toISOString(),posts,plans,refs,goals},null,1),'application/json');
   toast('백업 파일을 저장했어요');
 });
 $('#restoreFile').addEventListener('change',e=>{
@@ -1400,7 +1604,7 @@ $('#restoreFile').addEventListener('change',e=>{
   r.onload=async ()=>{ try{
       const d=JSON.parse(r.result); if(!Array.isArray(d.posts)||!Array.isArray(d.plans)||!Array.isArray(d.refs)) throw 0;
       if(!(await ask(`백업을 불러오면 지금 데이터가 바뀌어요.\n기획안 ${d.plans.length}개 · 성과 ${d.posts.length}개 · 레퍼런스 ${d.refs.length}개\n계속할까요?`,{ok:'불러오기',danger:false}))) return;
-      posts=d.posts; plans=d.plans; refs=d.refs; saveAll(); renderTab(); toast('백업을 불러왔어요');
+      posts=d.posts; plans=d.plans; refs=d.refs; if(Array.isArray(d.goals)){ goals=d.goals; goalSel=null; saveGoals(); } saveAll(); renderTab(); toast('백업을 불러왔어요');
     }catch(err){ toast('백업 파일 형식이 아니에요'); } };
   r.readAsText(f,'utf-8'); e.target.value='';
 });
