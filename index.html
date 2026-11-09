@@ -219,8 +219,11 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 /* feedback */
 .fb-l{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--text-2);margin:12px 0 8px}
 .fb-l textarea{width:100%;box-sizing:border-box}
-.fb-steps{margin:0 0 6px;padding-left:20px;font-size:13px;line-height:1.6}
-#fbSend{text-decoration:none}
+.fb-l input{width:100%;box-sizing:border-box}
+.fb-ways{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;margin-top:6px}
+.fb-way{background:var(--surface-2);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.fb-way .btn{text-decoration:none;text-align:center;margin-top:auto}
+.badge-rec{font-size:11px;font-weight:600;color:var(--accent-ink);background:var(--accent);border-radius:99px;padding:1px 7px;margin-left:4px}
 /* csv how */
 .linkbtn{font:inherit;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;font-weight:500}
 .csvguide.flash{outline:3px solid var(--accent);outline-offset:2px;transition:outline-color .6s}
@@ -650,19 +653,25 @@ td.best{font-weight:700;color:var(--text)}
 <!-- 수정 요청 -->
 <dialog id="fbDlg">
   <h2>💬 수정 요청 보내기</h2>
-  <p class="help" style="margin:-4px 0 12px">불편한 점, 있었으면 하는 기능, 오류 모두 환영해요! 만든 사람(@yun_justdoit)이 읽고 고쳐서 릴스로 소개해 드려요.</p>
+  <p class="help" style="margin:-4px 0 12px">불편한 점, 있었으면 하는 기능, 오류 모두 환영해요! 만든 사람(@yun_justdoit)이 직접 읽고 고쳐서, 어떻게 바뀌었는지 릴스로 소개해 드려요.</p>
   <div class="chips" id="fbKind"><button type="button" class="chip on" data-k="불편한 점">😣 불편한 점</button><button type="button" class="chip" data-k="기능 추천">✨ 기능 추천</button><button type="button" class="chip" data-k="오류 신고">🐞 오류 신고</button></div>
   <label class="fb-l">어떤 점인가요?
     <textarea id="fbText" rows="4" placeholder="예: 성과 분석에서 월별로도 보고 싶어요"></textarea></label>
-  <ol class="fb-steps">
-    <li><b>복사하고 DM 열기</b>를 누르면 적은 내용이 복사되고 인스타그램 DM 창이 열려요.</li>
-    <li>DM 입력창을 길게 눌러 <b>붙여넣기</b> → 보내기!</li>
-  </ol>
-  <p class="help">DM이 어렵다면 릴스 댓글로 남겨 주셔도 돼요.</p>
-  <div class="form-actions">
-    <button class="btn" id="fbCancel">닫기</button>
-    <a class="btn primary" id="fbSend" href="https://ig.me/m/yun_justdoit" target="_blank" rel="noopener">복사하고 DM 열기</a>
+  <label class="fb-l">답변 받을 연락처 (선택)
+    <input id="fbContact" placeholder="인스타 아이디나 이메일 — 수정되면 알려드릴게요"></label>
+  <div class="fb-ways">
+    <div class="fb-way">
+      <b>🌐 웹으로 보내기 <span class="badge-rec">추천</span></b>
+      <span class="help">구글 폼이 열리고 적은 내용이 미리 채워져 있어요. <b>제출</b>만 누르면 끝! 인스타가 없어도, 이름 없이도 보낼 수 있어요.</span>
+      <a class="btn primary" id="fbWeb" href="https://docs.google.com/forms/d/e/1FAIpQLSdKjnoJCY-XZ8cYWN75DTUr8YuBA7Jq576UWTptJG_Vb_sznA/viewform" target="_blank" rel="noopener">웹으로 보내기</a>
+    </div>
+    <div class="fb-way">
+      <b>📩 인스타 DM으로 보내기</b>
+      <span class="help">적은 내용이 복사되고 DM 창이 열려요. 입력창을 길게 눌러 <b>붙여넣기</b> → 보내기.</span>
+      <a class="btn" id="fbSend" href="https://ig.me/m/yun_justdoit" target="_blank" rel="noopener">복사하고 DM 열기</a>
+    </div>
   </div>
+  <div class="form-actions"><button class="btn" id="fbCancel">닫기</button></div>
 </dialog>
 
 <!-- 꾸미기 -->
@@ -751,7 +760,7 @@ td.best{font-weight:700;color:var(--text)}
       <li><b>깊게 보기</b> — 성과 분석 탭의 <b>📊 지표별 분석</b>에서 조회수·도달·좋아요·댓글·저장·공유·팔로우마다 잘 된 유형·요일·시간대를 확인해요. 또 심화 분석 탭에서 <b>시리즈별 회차 성과</b>와, 캡션에서 부탁한 행동(댓글·저장·공유·팔로우)이 <b>실제로 효과가 있었는지</b> 확인해요. 「1탄·2탄」처럼 제목이 비슷하면 자동으로 묶이고, <b>제목이 달라도 + 시리즈 직접 만들기</b>로 원하는 게시물을 골라 시리즈로 묶을 수 있어요.</li>
       <li><b>꾸준히 갱신</b> — 일주일에 한 번쯤 새 CSV를 넣으면 같은 게시물은 숫자만 최신으로 바뀌고, 업로드 완료한 기획안과 자동으로 연결돼요.</li>
     </ol>
-    <p class="note">💬 쓰다가 불편한 점이나 원하는 기능이 있으면 오른쪽 위 <b>수정 요청</b>으로 만든 사람에게 바로 DM을 보낼 수 있어요. 받은 요청은 고쳐서 릴스로 소개해요!</p>
+    <p class="note">💬 쓰다가 불편한 점이나 원하는 기능이 있으면 오른쪽 위 <b>수정 요청</b>으로 만든 사람에게 바로 보낼 수 있어요 (웹 또는 인스타 DM). 받은 요청은 고쳐서 릴스로 소개해요!</p>
     <p class="note">🎨 오른쪽 위 <b>꾸미기</b>에서 배경색·포인트 색·그래프 색과 그래프 모양(막대·선·도넛·원형·레이더)을 내 취향대로 바꿀 수 있어요.</p>
     <section class="savebox" id="saveGuide">
       <h3>⚠️ 꼭 알아두세요: 데이터는 이 브라우저에만 저장돼요</h3>
@@ -1044,13 +1053,22 @@ let fbKind='불편한 점';
 $('#fbBtn').addEventListener('click',()=>{ $('#fbDlg').showModal(); setTimeout(()=>$('#fbText').focus(),0); });
 $('#fbCancel').addEventListener('click',()=>$('#fbDlg').close());
 $('#fbKind').addEventListener('click',e=>{ const c=e.target.closest('[data-k]'); if(!c) return; fbKind=c.dataset.k; $('#fbKind').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); });
+const FORM_BASE='https://docs.google.com/forms/d/e/1FAIpQLSdKjnoJCY-XZ8cYWN75DTUr8YuBA7Jq576UWTptJG_Vb_sznA/viewform';
+const FORM_ENTRY={'불편한 점':'1385837534','기능 추천':'46404582','오류 신고':'1175157317'}, FORM_CONTACT='1411033457';
+function fbWebUrl(){
+  const t=$('#fbText').value.trim(), c=$('#fbContact').value.trim(), q=new URLSearchParams({usp:'pp_url'});
+  if(t) q.set('entry.'+FORM_ENTRY[fbKind],t); if(c) q.set('entry.'+FORM_CONTACT,c);
+  return FORM_BASE+'?'+q.toString();
+}
+$('#fbWeb').addEventListener('click',()=>{ $('#fbWeb').href=fbWebUrl(); setTimeout(()=>{ $('#fbDlg').close(); $('#fbText').value=''; $('#fbContact').value=''; toast('구글 폼에서 제출을 눌러 주세요. 고마워요!'); },300); });
 $('#fbSend').addEventListener('click',()=>{
   const t=$('#fbText').value.trim();
-  const msg=`[콘텐츠 매니저 · ${fbKind}]\n${t||'(내용을 여기에 적어 주세요)'}`;
+  const c=$('#fbContact').value.trim();
+  const msg=`[콘텐츠 매니저 · ${fbKind}]\n${t||'(내용을 여기에 적어 주세요)'}`+(c?`\n연락처: ${c}`:'');
   let ok=false;
   try{ if(navigator.clipboard?.writeText){ navigator.clipboard.writeText(msg).then(()=>toast('복사했어요! DM 창에 붙여넣어 주세요'),()=>toast('복사가 안 됐어요. DM에 직접 적어 주세요')); ok=true; } }catch(e){}
   if(!ok){ try{ const ta=document.createElement('textarea'); ta.value=msg; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('복사했어요! DM 창에 붙여넣어 주세요'); }catch(e){ toast('DM 창에 직접 적어 주세요'); } }
-  setTimeout(()=>{ $('#fbDlg').close(); $('#fbText').value=''; },300);
+  setTimeout(()=>{ $('#fbDlg').close(); $('#fbText').value=''; $('#fbContact').value=''; },300);
 });
 
 /* ================= 꾸미기 ================= */
