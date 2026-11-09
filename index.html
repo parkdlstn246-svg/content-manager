@@ -208,6 +208,14 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 .lk-two{display:flex;gap:18px;flex-wrap:wrap}
 .lk-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:8px 14px}
 .lk-charts label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--text-2)}
+/* save guide & backup nudge */
+.savebox{border:1.5px solid var(--bad);background:var(--surface);border-radius:12px;padding:12px 14px;margin-top:14px}
+.savebox h3{font-size:14px;margin:12px 0 6px} .savebox h3:first-child{margin-top:0}
+.savebox ul,.savebox ol{margin:0;padding-left:20px} .savebox li{margin:0 0 6px;line-height:1.6;font-size:13.5px}
+.savebox p{margin:8px 0 0;font-size:13px;color:var(--text-2);line-height:1.6}
+.savebox code{background:var(--surface-2);padding:1px 5px;border-radius:4px;font-size:12px}
+.nudge{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.nudge .actions{display:flex;gap:6px;flex-wrap:wrap}
 /* demo */
 .demo-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .demo-bar .btn{white-space:nowrap;text-decoration:none}
@@ -321,6 +329,8 @@ td.best{font-weight:700;color:var(--text)}
       <input id="restoreFile" type="file" accept=".json,application/json" class="hidden">
     </div>
   </header>
+
+  <div class="notice nudge hidden" id="backupNudge"></div>
 
   <nav class="tabs" id="tabs">
     <button data-tab="board">기획안</button>
@@ -712,7 +722,27 @@ td.best{font-weight:700;color:var(--text)}
       <li><b>꾸준히 갱신</b> — 일주일에 한 번쯤 새 CSV를 넣으면 같은 게시물은 숫자만 최신으로 바뀌고, 업로드 완료한 기획안과 자동으로 연결돼요.</li>
     </ol>
     <p class="note">🎨 오른쪽 위 <b>꾸미기</b>에서 배경색·포인트 색·그래프 색과 그래프 모양(막대·선·도넛·원형·레이더)을 내 취향대로 바꿀 수 있어요.</p>
-    <p class="note">🔒 입력한 데이터는 <b>지금 쓰는 브라우저에만</b> 저장되고, 만든 사람을 포함해 다른 누구에게도 보이지 않아요. 브라우저 기록을 지우거나 다른 기기에서 열면 비어 있으니 가끔 <b>백업 저장</b>을 해두세요.</p>
+    <section class="savebox" id="saveGuide">
+      <h3>⚠️ 꼭 알아두세요: 데이터는 이 브라우저에만 저장돼요</h3>
+      <ul>
+        <li>입력한 기획안·성과·레퍼런스·목표는 인터넷에 올라가지 않고 <b>지금 쓰는 기기의 지금 쓰는 브라우저 안에만</b> 저장돼요. 만든 사람을 포함해 다른 누구도 볼 수 없어요.</li>
+        <li>그래서 <b>📱 휴대폰과 💻 컴퓨터는 따로</b>예요. 같은 기기라도 Safari와 Chrome은 따로이고, 웹사이트 링크와 Claude 링크도 서로 따로예요.</li>
+        <li><b>브라우저 방문 기록·웹사이트 데이터를 지우면 함께 지워져요.</b> 시크릿(개인정보 보호) 창에서는 창을 닫으면 사라져요.</li>
+        <li>앱이 새 버전으로 바뀌어도 저장된 데이터는 그대로예요.</li>
+      </ul>
+      <h3>💾 백업 저장 (2주에 한 번 추천)</h3>
+      <ol>
+        <li>오른쪽 위 <b>백업 저장</b>을 누르면 <code>콘텐츠매니저_백업_날짜.json</code> 파일이 저장돼요. (맥: 다운로드 폴더 · 아이폰: '파일' 앱 → 다운로드)</li>
+        <li>문제가 생기면 <b>백업 불러오기</b>로 그 파일을 고르면 그대로 되살아나요.</li>
+      </ol>
+      <h3>📲 다른 기기로 옮기기 (예: 컴퓨터 → 휴대폰)</h3>
+      <ol>
+        <li><b>컴퓨터</b>에서 <b>백업 저장</b>을 눌러요.</li>
+        <li>그 파일을 AirDrop이나 카카오톡 '나와의 채팅'으로 휴대폰에 보내고, <b>'파일' 앱에 저장</b>해요.</li>
+        <li><b>휴대폰</b>에서 같은 사이트를 열고 <b>백업 불러오기</b> → 저장한 파일을 골라요.</li>
+      </ol>
+      <p>옮기는 건 <b>한 번 복사</b>예요. 이후에 한쪽에서 바꾼 내용은 자동으로 맞춰지지 않으니, CSV를 받는 <b>컴퓨터를 주로 쓰고</b> 필요할 때만 최신 백업을 옮기는 걸 추천해요.</p>
+    </section>
   </div>
   <div class="form-actions"><button class="btn primary" id="helpClose">시작하기</button></div>
 </dialog>
@@ -777,7 +807,7 @@ function showTab(t){
   ['board','cal','perf','deep','refs'].forEach(n=>$('#tab-'+n).classList.toggle('hidden',n!==t));
   renderTab();
 }
-function renderTab(){ ({board:renderBoard, cal:renderCal, perf:renderPerf, deep:renderDeep, refs:renderRefs})[tab](); }
+function renderTab(){ ({board:renderBoard, cal:renderCal, perf:renderPerf, deep:renderDeep, refs:renderRefs})[tab](); renderNudge(); }
 $('#tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) showTab(b.dataset.tab); });
 
 /* ================= 기획안 보드 ================= */
@@ -1837,8 +1867,25 @@ $('#postSave').addEventListener('click',()=>{
 
 /* ================= 백업 ================= */
 $('#backupBtn').addEventListener('click',()=>{
+  if(DEMO) return toast('데모라 저장하지 않았어요 — 실제로 쓸 때는 이 버튼으로 백업 파일이 저장돼요');
   download(`콘텐츠매니저_백업_${ymd(new Date())}.json`, JSON.stringify({app:'content-manager',version:1,savedAt:new Date().toISOString(),posts,plans,refs,goals},null,1),'application/json');
-  toast('백업 파일을 저장했어요');
+  nudgeMem.last=Date.now(); store('cm-last-backup',nudgeMem.last); renderNudge(); toast('백업 파일을 저장했어요');
+});
+const nudgeMem={last:0,snooze:0};
+function renderNudge(){
+  const el=$('#backupNudge'); if(!el) return;
+  const has=posts.length||plans.length||refs.length||(typeof goals!=='undefined'&&goals.length);
+  const last=Math.max(load('cm-last-backup',0),nudgeMem.last), snooze=Math.max(load('cm-nudge-snooze',0),nudgeMem.snooze), days=last?Math.floor((Date.now()-last)/864e5):null;
+  const show=has && (last===0 || days>=14) && Date.now()>snooze;
+  el.classList.toggle('hidden',!show); if(!show) return;
+  el.innerHTML=`<span>💾 <b>${last?`마지막 백업이 ${days}일 전이에요.`:'아직 백업한 적이 없어요.'}</b> 데이터는 이 브라우저에만 저장돼서, 기록을 지우거나 기기를 바꾸면 사라질 수 있어요.</span>
+    <span class="actions"><button class="btn sm primary" data-nudge="save">지금 백업 저장</button><button class="btn sm" data-nudge="help">자세히</button><button class="btn sm" data-nudge="later">나중에</button></span>`;
+}
+$('#backupNudge').addEventListener('click',e=>{
+  const b=e.target.closest('[data-nudge]'); if(!b) return;
+  if(b.dataset.nudge==='save'){ if(DEMO){ nudgeMem.snooze=Date.now()+864e5; renderNudge(); return toast('데모라 저장하지 않았어요 — 실제로 쓸 때는 이 버튼으로 백업 파일이 저장돼요'); } $('#backupBtn').click(); }
+  else if(b.dataset.nudge==='help'){ $('#helpDlg').showModal(); setTimeout(()=>$('#saveGuide').scrollIntoView({block:'start'}),50); }
+  else { nudgeMem.snooze=Date.now()+3*864e5; store('cm-nudge-snooze',nudgeMem.snooze); renderNudge(); }
 });
 $('#restoreFile').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f) return; const r=new FileReader();
@@ -1950,7 +1997,7 @@ if(DEMO){
   const s=makeSample(); posts=s.sp; plans=s.pl; refs=s.rf; goals=sampleGoals();
   const bar=document.createElement('div'); bar.className='notice demo-bar';
   bar.innerHTML=`<span>👀 <b>데모 화면이에요.</b> 가상의 샘플 데이터로 채운 예시라 실제 계정 숫자가 아니고, 여기서 바꾼 내용은 저장되지 않아요. 탭을 눌러 둘러보세요.</span><a class="btn sm primary" href="${esc(location.pathname)}">내 데이터로 시작하기 →</a>`;
-  $('#tabs').before(bar);
+  $('#backupNudge').before(bar);
   $('#csvGuide')?.removeAttribute('open');
   showTab('perf');
 } else {
