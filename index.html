@@ -173,6 +173,9 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 .stats b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
 .stats span{font-size:12px;color:var(--text-2)}
 @media (max-width:520px){.form{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+/* demo */
+.demo-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.demo-bar .btn{white-space:nowrap;text-decoration:none}
 /* goals */
 .goalcard h2{font-size:16px;margin:0}
 .goal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
@@ -658,8 +661,9 @@ td.best{font-weight:700;color:var(--text)}
 (() => {
 /* ================= 공통 ================= */
 const K = { posts:'ig-analytics-posts-v1', plans:'cm-plans-v1', refs:'cm-refs-v1', tab:'cm-tab' };
-const load = (k,d) => { try{ const v=JSON.parse(localStorage.getItem(k)); return v ?? d; }catch(e){ return d; } };
-const store = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+const DEMO = /(^|[?&#])demo\b/.test(location.search+' '+location.hash) || /[?&#]demo\b/.test(location.href);
+const load = (k,d) => { if(DEMO) return d; try{ const v=JSON.parse(localStorage.getItem(k)); return v ?? d; }catch(e){ return d; } };
+const store = (k,v) => { if(DEMO) return; try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
 let posts = load(K.posts, []), plans = load(K.plans, []), refs = load(K.refs, []);
 const saveAll = () => { store(K.posts,posts); store(K.plans,plans); store(K.refs,refs); };
 
@@ -1664,6 +1668,20 @@ function makeSample(){
   );
   return {sp,pl,rf};
 }
+function sampleGoals(){
+  const t=todayD(), z0=(y,m,d)=>ymd(new Date(y,m,d));
+  const ls=z0(t.getFullYear(),t.getMonth()-1,1), le=z0(t.getFullYear(),t.getMonth(),0);
+  const cs=z0(t.getFullYear(),t.getMonth(),1), ce=z0(t.getFullYear(),t.getMonth()+1,0);
+  const lp=postsIn(ls,le), up=lp.length, lv=lp.length?sum(lp,'views')/lp.length:0;
+  return [
+    {id:uid(),createdAt:Date.now()-3e9,start:ls,end:le,fStart:1180,fEnd:1312,
+      targets:{uploads:Math.max(1,up-2),avgViews:niceUp(lv*1.2),saves:niceUp(sum(lp,'saves')*0.85),followers:120}},
+    (()=>{ const cp=postsIn(cs,ymd(t)), tot=Math.round((pDate(ce)-pDate(cs))/dayMs)+1, el=Math.round((t-pDate(cs))/dayMs)+1, k=cp.length?tot/el:0;
+      const est=(key,mul,fb)=> k ? niceUp((key==='n'?cp.length:sum(cp,key))*k*mul) : fb;
+      return {id:uid(),createdAt:Date.now(),start:cs,end:ce,fStart:1312,fEnd:null,
+        targets:{uploads:Math.max(4,est('n',0.9,up)),views:est('views',0.95,niceUp(sum(lp,'views'))),saves:est('saves',1.3,niceUp(sum(lp,'saves')*1.2)),followers:150}}; })()
+  ];
+}
 document.querySelectorAll('.sampleBtn').forEach(b=>b.addEventListener('click',async ()=>{
   if((posts.length||plans.length||refs.length) && !(await ask('샘플 데이터를 넣으면 지금 데이터가 샘플로 바뀌어요.\n먼저 백업 저장을 해두는 걸 추천해요. 계속할까요?',{ok:'샘플로 바꾸기'}))) return;
   const s=makeSample(); posts=s.sp; plans=s.pl; refs=s.rf; saveAll(); renderTab(); toast('샘플 데이터를 넣었어요 — 다른 탭도 둘러보세요');
@@ -1690,8 +1708,17 @@ new MutationObserver(()=>tab==='perf'&&renderPerf()).observe(document.documentEl
 
 /* 첫 실행: 아무 데이터도 없으면 성과 탭의 시작 안내부터 */
 if(!posts.length && !plans.length && !refs.length) tab='perf';
-showTab(['board','cal','perf','deep','refs'].includes(tab)?tab:'board');
-if(!posts.length && !plans.length && !refs.length && !load('cm-seen-help',0)) $('#helpDlg').showModal();
+if(DEMO){
+  const s=makeSample(); posts=s.sp; plans=s.pl; refs=s.rf; goals=sampleGoals();
+  const bar=document.createElement('div'); bar.className='notice demo-bar';
+  bar.innerHTML=`<span>👀 <b>데모 화면이에요.</b> 가상의 샘플 데이터로 채운 예시라 실제 계정 숫자가 아니고, 여기서 바꾼 내용은 저장되지 않아요. 탭을 눌러 둘러보세요.</span><a class="btn sm primary" href="${esc(location.pathname)}">내 데이터로 시작하기 →</a>`;
+  $('#tabs').before(bar);
+  $('#csvGuide')?.removeAttribute('open');
+  showTab('perf');
+} else {
+  showTab(['board','cal','perf','deep','refs'].includes(tab)?tab:'board');
+  if(!posts.length && !plans.length && !refs.length && !load('cm-seen-help',0)) $('#helpDlg').showModal();
+}
 })();
 </script>
 </body>
