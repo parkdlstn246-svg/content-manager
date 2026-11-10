@@ -227,6 +227,9 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 /* csv how */
 .linkbtn{font:inherit;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;font-weight:500}
 .csvguide.flash{outline:3px solid var(--accent);outline-offset:2px;transition:outline-color .6s}
+/* custom range */
+.custom-range{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2);flex-wrap:wrap}
+.custom-range input{padding:5px 8px}
 /* demo */
 .demo-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .demo-bar .btn{white-space:nowrap;text-decoration:none}
@@ -391,7 +394,8 @@ td.best{font-weight:700;color:var(--text)}
   <section id="tab-perf" class="hidden">
     <div class="toolbar">
       <div class="actions" id="perfFilters">
-        <span class="seg" id="rangeSeg"><button data-v="30">30일</button><button data-v="90">90일</button><button data-v="all" class="on">전체</button></span>
+        <span class="seg" id="rangeSeg"><button data-v="7">7일</button><button data-v="30">30일</button><button data-v="90">90일</button><button data-v="all" class="on">전체</button><button data-v="custom">📅 직접 설정</button></span>
+        <span class="custom-range hidden" id="customRange"><input type="date" id="rangeFrom" aria-label="시작일"> ~ <input type="date" id="rangeTo" aria-label="종료일"></span>
         <span class="seg" id="typeSeg"><button data-v="all" class="on">전체 유형</button><button data-v="릴스">릴스</button><button data-v="캐러셀·사진">캐러셀·사진</button></span>
         <span class="help" id="countLabel"></span>
       </div>
@@ -1485,13 +1489,26 @@ function enrich(p){
   const base=p.views||p.reach||0;
   return {...p,inter, er:base?inter/base:null, saveRate:base?(p.saves||0)/base:null, shareRate:base?(p.shares||0)/base:null, cvr:base?(p.follows||0)/base:null, d:new Date(p.date)};
 }
+/* 기간: 숫자(최근 N일) · 'all' · 'custom'(시작일~종료일) */
+function rangeBounds(){
+  if(perf.range==='all') return null;
+  if(perf.range==='custom'){ if(!perf.from||!perf.to) return null; const [a,b]=perf.from<=perf.to?[perf.from,perf.to]:[perf.to,perf.from]; const s=a.split('-').map(Number), e=b.split('-').map(Number);
+    return [new Date(s[0],s[1]-1,s[2]).getTime(), new Date(e[0],e[1]-1,e[2]+1).getTime()]; }
+  const now=Date.now(); return [now-perf.range*864e5, now+1];
+}
+function rangeText(){
+  if(perf.range==='all') return '전체 기간'; if(perf.range!=='custom') return `최근 ${perf.range}일`;
+  const b=rangeBounds(); if(!b) return ''; const s=new Date(b[0]), e=new Date(b[1]-1);
+  return `${s.getMonth()+1}/${s.getDate()} ~ ${e.getMonth()+1}/${e.getDate()} (${Math.round((b[1]-b[0])/864e5)}일)`;
+}
 function filtered(){
   const now=Date.now();
-  return posts.map(enrich).filter(p=>(perf.type==='all'||p.type===perf.type) && (perf.range==='all'||now-p.d.getTime()<=perf.range*864e5)).sort((a,b)=>a.d-b.d);
+  const b=rangeBounds();
+  return posts.map(enrich).filter(p=>(perf.type==='all'||p.type===perf.type) && (!b || (p.d.getTime()>=b[0] && p.d.getTime()<b[1]))).sort((a,b)=>a.d-b.d);
 }
 function previousPeriod(){
-  if(perf.range==='all') return null; const now=Date.now(), r=perf.range*864e5;
-  return posts.map(enrich).filter(p=>(perf.type==='all'||p.type===perf.type) && now-p.d.getTime()>r && now-p.d.getTime()<=2*r);
+  const b=rangeBounds(); if(!b) return null; const L=b[1]-b[0];
+  return posts.map(enrich).filter(p=>(perf.type==='all'||p.type===perf.type) && p.d.getTime()>=b[0]-L && p.d.getTime()<b[0]);
 }
 function renderLastImport(){
   const t=load('cm-last-import',0), el=$('#lastImport');
@@ -1510,7 +1527,7 @@ function renderPerf(){
   $('#perfEmpty').classList.toggle('hidden',has); $('#perfDash').classList.toggle('hidden',!has); $('#perfFilters').classList.toggle('hidden',!has);
   if(!has) return;
   const list=filtered();
-  $('#countLabel').textContent=`게시물 ${list.length}개`;
+  $('#countLabel').textContent=`${rangeText()} · 게시물 ${list.length}개`;
   renderKPIs(list); renderInsights(list); renderMetric(list); renderCharts(list); renderTop(list); renderTable(list);
 }
 function delta(cur,prev){ if(prev==null||!prev) return ''; const d=(cur-prev)/prev; if(!isFinite(d)) return ''; return ` <span style="color:${d>=0?'var(--good)':'var(--bad)'}">${d>=0?'▲':'▼'} ${Math.abs(d*100).toFixed(0)}%</span>`; }
@@ -1647,7 +1664,24 @@ $('#tbl').addEventListener('click',e=>{
   const tr=e.target.closest('[data-info]'); if(tr) openInfo(tr.dataset.info);
 });
 $('#topList').addEventListener('click',e=>{ const li=e.target.closest('[data-info]'); if(li) openInfo(li.dataset.info); });
-segment('#rangeSeg',v=>{ perf.range=v==='all'?v:+v; renderPerf(); });
+function saveRange(){ store('cm-perf-range',{range:perf.range,from:perf.from,to:perf.to}); }
+function syncRangeUI(){
+  $('#rangeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.v===String(perf.range)));
+  $('#customRange').classList.toggle('hidden',perf.range!=='custom');
+  $('#rangeFrom').value=perf.from||''; $('#rangeTo').value=perf.to||'';
+  $('#rangeTo').min=perf.from||'';
+}
+segment('#rangeSeg',v=>{
+  if(v==='custom'){ if(!perf.from||!perf.to){ const t=new Date(); perf.to=ymd(t); perf.from=ymd(new Date(t.getFullYear(),t.getMonth(),t.getDate()-13)); } perf.range='custom'; }
+  else perf.range= v==='all'?v:+v;
+  syncRangeUI(); saveRange(); renderPerf();
+});
+['#rangeFrom','#rangeTo'].forEach(id=>$(id).addEventListener('change',()=>{
+  let a=$('#rangeFrom').value, b=$('#rangeTo').value; if(!a||!b) return;
+  if(a>b){ if(id==='#rangeFrom') b=a; else a=b; }   // 시작일을 늦추면 종료일도 같이, 종료일을 당기면 시작일도 같이
+  perf.from=a; perf.to=b; syncRangeUI(); saveRange(); renderPerf();
+}));
+(()=>{ const r=load('cm-perf-range',null); if(r && (r.range==='all'||r.range==='custom'||[7,30,90].includes(r.range))){ perf.range=r.range; perf.from=r.from||''; perf.to=r.to||''; if(perf.range==='custom'&&(!perf.from||!perf.to)) perf.range='all'; } syncRangeUI(); })();
 segment('#typeSeg',v=>{ perf.type=v; renderPerf(); });
 segment('#topSeg',v=>{ perf.top=v; renderTop(filtered()); });
 $('#typeMetric').addEventListener('change',renderPerf);
