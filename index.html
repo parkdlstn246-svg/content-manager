@@ -194,6 +194,20 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 .minsight{background:var(--accent-soft);border-radius:10px;padding:10px 14px;margin-bottom:12px}
 .minsight ul{margin:0;padding-left:18px} .minsight li{margin:4px 0;line-height:1.6}
 @media (max-width:560px){.mstats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* ads */
+.adchips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.adchip{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:99px;background:var(--surface);padding-right:2px}
+.adchip .adt{border:0;background:none;padding:5px 4px 5px 12px;cursor:pointer;font:inherit;font-size:13px;color:var(--text);display:inline-flex;align-items:center;gap:6px}
+.adchip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.adchip.off{opacity:.45} .adchip.off .adt{text-decoration:line-through}
+.adtbl td.best{color:var(--accent);font-weight:700}
+.adtbl th.adh{cursor:pointer;color:var(--text);font-weight:700}
+.adtbl th.adh i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.adtbl tr.sec td{background:var(--surface-2);font-size:12px;color:var(--text-2);text-align:left;font-weight:600}
+.adtbl td.txt{white-space:normal;min-width:150px;font-size:12.5px;color:var(--text-2)}
+.mbar.adbar{grid-template-columns:130px 1fr 76px}
+.mbar.adbar .trk i{opacity:.85}
+.mbar.adbar.best .trk i{opacity:1}
 /* look */
 .lk-sec{border-top:1px solid var(--border);padding:12px 0 4px}
 .lk-sec:first-of-type{border-top:0;padding-top:0}
@@ -353,6 +367,7 @@ td.best{font-weight:700;color:var(--text)}
     <button data-tab="cal">캘린더</button>
     <button data-tab="perf">성과 분석</button>
     <button data-tab="deep">심화 분석</button>
+    <button data-tab="ads">광고 분석</button>
     <button data-tab="refs">레퍼런스</button>
   </nav>
 
@@ -584,6 +599,33 @@ td.best{font-weight:700;color:var(--text)}
     </div>
   </section>
 
+  <section id="tab-ads" class="hidden">
+    <div class="toolbar">
+      <div class="actions"><span class="help">광고 성과는 CSV로 안 나와서 직접 옮겨 적어요. 인스타그램 앱 → 광고한 게시물 → 인사이트 → <b>광고</b> 탭의 숫자를 넣으면 돼요.</span></div>
+      <button class="btn primary newAdBtn">+ 광고 추가</button>
+    </div>
+    <div id="adEmpty" class="card empty"><h2>아직 넣은 광고가 없어요</h2><p>광고를 2개 이상 넣으면 <b>방문당 비용 · 팔로우당 비용 · 전환율</b>을 나란히 비교해 줘요.</p><button class="btn primary newAdBtn">+ 광고 추가</button></div>
+    <div id="adBody" class="hidden">
+      <div class="adchips" id="adChips"></div>
+      <div class="kpis" id="adKpis"></div>
+      <div class="card full">
+        <div class="chart-head"><h2>💸 광고별 비교</h2><span class="help">지표마다 가장 좋은 값은 <b style="color:var(--accent)">파란 글씨</b> · 광고 이름을 누르면 편집</span></div>
+        <div class="table-wrap"><table class="adtbl" id="adTable"></table></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h2 style="margin:0 0 10px">📊 핵심 효율</h2>
+          <div class="mgrid" id="adBars" style="grid-template-columns:1fr"></div>
+        </div>
+        <div class="card">
+          <h2 style="margin:0 0 10px">💡 인사이트</h2>
+          <div class="minsight"><ul id="adInsights"></ul></div>
+          <p class="help" style="margin:0">광고 목표(예: 프로필 방문)와 실제로 원하는 결과(예: 팔로우)가 다를 수 있어요. 둘 다 넣어 두고 비교해 보세요.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="tab-refs" class="hidden">
     <div class="toolbar">
       <div class="actions">
@@ -595,6 +637,37 @@ td.best{font-weight:700;color:var(--text)}
     <div class="refs" id="refList"></div>
   </section>
 </div>
+
+<!-- 광고 -->
+<dialog id="adDlg">
+  <h2 id="adDlgTitle">광고 추가</h2>
+  <p class="help" style="margin:0 0 10px">인스타그램 앱 → 광고한 게시물 → 인사이트 → <b>광고</b> 탭의 숫자를 옮겨 적어요. 모르는 칸은 비워도 돼요.</p>
+  <form class="form" id="adForm">
+    <label class="span">광고 이름<input name="name" required placeholder="예) A · 썰 릴스 2탄"></label>
+    <label>시작일<input type="date" name="start"></label>
+    <label>종료일<input type="date" name="end"></label>
+    <label>광고 목표<select name="goal"><option>프로필 방문</option><option>게시물 참여</option><option>팔로워 증가</option><option>웹사이트 방문</option><option>메시지</option></select></label>
+    <label>일 예산 (원)<input type="number" min="0" name="daily"></label>
+    <label class="span">타겟<input name="target" placeholder="예) 20~35세 · 토크쇼 · 웹툰 · 유머"></label>
+    <label>지출 (원)<input type="number" min="0" name="spend" required></label>
+    <label>조회<input type="number" min="0" name="views"></label>
+    <label>도달<input type="number" min="0" name="reach"></label>
+    <label>3초 이상 재생<input type="number" min="0" name="plays3"></label>
+    <label>프로필 방문<input type="number" min="0" name="visits"></label>
+    <label>팔로우<input type="number" min="0" name="follows"></label>
+    <label>좋아요·공감<input type="number" min="0" name="likes"></label>
+    <label>저장<input type="number" min="0" name="saves"></label>
+    <label>공유<input type="number" min="0" name="shares"></label>
+    <label>댓글<input type="number" min="0" name="comments"></label>
+    <label class="span">주 시청층<input name="audience" placeholder="예) 18~24세 53% · 여성 59%"></label>
+    <label class="span">메모<textarea name="memo" rows="2" placeholder="소재 특징, 조기 종료 이유 등"></textarea></label>
+  </form>
+  <div class="form-actions">
+    <button class="btn danger left" id="adDel">삭제</button>
+    <button class="btn" id="adCancel">취소</button>
+    <button class="btn primary" id="adSave">저장</button>
+  </div>
+</dialog>
 
 <!-- 기획안 -->
 <dialog id="planDlg">
@@ -848,10 +921,10 @@ let tab = load(K.tab,'board');
 function showTab(t){
   tab=t; store(K.tab,t);
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-  ['board','cal','perf','deep','refs'].forEach(n=>$('#tab-'+n).classList.toggle('hidden',n!==t));
+  ['board','cal','perf','deep','ads','refs'].forEach(n=>$('#tab-'+n).classList.toggle('hidden',n!==t));
   renderTab();
 }
-function renderTab(){ ({board:renderBoard, cal:renderCal, perf:renderPerf, deep:renderDeep, refs:renderRefs})[tab](); renderNudge(); }
+function renderTab(){ ({board:renderBoard, cal:renderCal, perf:renderPerf, deep:renderDeep, ads:renderAds, refs:renderRefs})[tab](); renderNudge(); }
 $('#tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) showTab(b.dataset.tab); });
 
 /* ================= 기획안 보드 ================= */
@@ -1971,10 +2044,137 @@ $('#postSave').addEventListener('click',()=>{
   posts.push(p); const n=autoLink(); saveAll(); $('#postDlg').close(); renderTab(); toast('게시물을 추가했어요'+(n?' · 기획안에 연결됨':''));
 });
 
+/* ================= 광고 분석 ================= */
+let ads = load('cm-ads-v1', []);
+const saveAds=()=>store('cm-ads-v1',ads);
+const adOff=new Set();
+const AD_COLS=['var(--s1)','var(--s2)','var(--s3)','#eda100','#8b5cf6','#ec4899'];
+const adColor=a=>AD_COLS[Math.max(0,ads.indexOf(a))%AD_COLS.length];
+const jg=w=>josa(w,'이/가').slice(String(w).length);
+const dv=(a,b)=> a!=null && b ? a/b : null;
+const AD_SEC=[
+  ['광고 정보',[
+    ['기간',a=>a.start||a.end?`${a.start?md(a.start):''} ~ ${a.end?md(a.end):''}`:'','t'],
+    ['목표',a=>a.goal||'','t'],
+    ['타겟',a=>a.target||'','t'],
+    ['지출',a=>a.spend,'won',null],
+  ]],
+  ['도달 · 시청',[
+    ['조회',a=>a.views,'n','hi'],
+    ['도달',a=>a.reach,'n','hi'],
+    ['3초 이상 재생률',a=>dv(a.plays3,a.views),'pct','hi'],
+    ['1,000회 조회당 비용',a=>a.views?a.spend/a.views*1000:null,'won','lo'],
+  ]],
+  ['방문 · 팔로우',[
+    ['프로필 방문',a=>a.visits,'n','hi'],
+    ['방문당 비용',a=>dv(a.spend,a.visits),'won','lo'],
+    ['팔로우',a=>a.follows,'n','hi'],
+    ['방문 → 팔로우 전환율',a=>dv(a.follows,a.visits),'pct','hi'],
+    ['팔로우당 비용',a=>dv(a.spend,a.follows),'won','lo'],
+  ]],
+  ['반응',[
+    ['좋아요·공감',a=>a.likes,'n','hi'],
+    ['저장',a=>a.saves,'n','hi'],
+    ['공유',a=>a.shares,'n','hi'],
+    ['댓글',a=>a.comments,'n','hi'],
+    ['주 시청층',a=>a.audience||'','t'],
+  ]],
+];
+const adF=(v,f)=> f==='t' ? esc(v||'–') : v==null||!isFinite(v) ? '–' : f==='won' ? '₩'+full(v) : f==='pct' ? pct(v) : full(v);
+function adBest(list,fn,better){
+  if(!better || list.length<2) return null;
+  const vs=list.map(a=>({a,v:fn(a)})).filter(x=>x.v!=null&&isFinite(x.v));
+  if(vs.length<2) return null;
+  const b=vs.reduce((p,c)=> (better==='hi'?c.v>p.v:c.v<p.v)?c:p);
+  return vs.every(x=>x.v===b.v) ? null : b;
+}
+function renderAds(){
+  $('#adEmpty').classList.toggle('hidden',ads.length>0);
+  $('#adBody').classList.toggle('hidden',!ads.length);
+  if(!ads.length) return;
+  const list=ads.filter(a=>!adOff.has(a.id));
+  $('#adChips').innerHTML=ads.map(a=>`<span class="adchip ${adOff.has(a.id)?'off':''}"><button class="adt" data-adtoggle="${a.id}" title="비교에 넣기 / 빼기"><i style="background:${adColor(a)}"></i>${esc(a.name)}</button><button class="x" data-adedit="${a.id}" title="편집">✎</button></span>`).join('')
+    +`<span class="help" style="align-self:center">이름을 누르면 비교에서 빼거나 다시 넣어요</span>`;
+  const T=k=>list.reduce((x,a)=>x+(a[k]||0),0), sp=T('spend'), vi=T('visits'), fo=T('follows');
+  $('#adKpis').innerHTML=[
+    ['총 지출','₩'+full(sp),`광고 ${list.length}개`],
+    ['프로필 방문',full(vi),'방문당 '+adF(dv(sp,vi),'won')],
+    ['팔로우',full(fo),'전환율 '+adF(dv(fo,vi),'pct')],
+    ['팔로우당 비용',adF(dv(sp,fo),'won'),'전체 평균'],
+  ].map(([l,v,s])=>`<div class="card kpi"><div class="label">${l}</div><div class="val">${v}</div><div class="sub">${s}</div></div>`).join('');
+  let h=`<thead><tr><th class="l">지표</th>${list.map(a=>`<th class="adh" data-adedit="${a.id}"><i style="background:${adColor(a)}"></i>${esc(a.name)}</th>`).join('')}</tr></thead><tbody>`;
+  AD_SEC.forEach(([sec,rows])=>{
+    h+=`<tr class="sec"><td colspan="${list.length+1}">${sec}</td></tr>`;
+    rows.forEach(([lb,fn,f,better])=>{
+      const b=adBest(list,fn,better);
+      h+=`<tr><td class="l">${lb}</td>${list.map(a=>`<td class="${f==='t'?'txt':''} ${b&&b.a===a?'best':''}">${adF(fn(a),f)}</td>`).join('')}</tr>`;
+    });
+  });
+  $('#adTable').innerHTML=h+'</tbody>';
+  const KEY=[['3초 이상 재생률',a=>dv(a.plays3,a.views),'pct','hi'],['방문당 비용',a=>dv(a.spend,a.visits),'won','lo'],['방문 → 팔로우 전환율',a=>dv(a.follows,a.visits),'pct','hi'],['팔로우당 비용',a=>dv(a.spend,a.follows),'won','lo']];
+  $('#adBars').innerHTML=KEY.map(([lb,fn,f,better])=>{
+    const vs=list.map(a=>({a,v:fn(a)})), mx=Math.max(...vs.map(x=>x.v||0)), b=adBest(list,fn,better);
+    return `<div><h3>${lb} <span class="help" style="font-weight:400">${better==='lo'?'(낮을수록 좋음)':'(높을수록 좋음)'}</span></h3>${vs.map(x=>`<div class="mbar adbar ${b&&b.a===x.a?'best':''}"><span>${esc(x.a.name)}</span><span class="trk"><i style="width:${mx&&x.v?Math.max(2,x.v/mx*100):0}%;background:${adColor(x.a)}"></i></span><span class="v">${adF(x.v,f)}</span></div>`).join('')}</div>`;
+  }).join('');
+  $('#adInsights').innerHTML=adInsights(list).map(t=>`<li>${t}</li>`).join('');
+}
+function adInsights(list){
+  if(list.length<2) return ['광고를 2개 이상 넣으면 어떤 광고가 더 효율적인지 비교해 드려요.'];
+  const out=[], n=a=>`<b>${esc(a.name)}</b>`;
+  const V=adBest(list,a=>dv(a.spend,a.visits),'lo'), F=adBest(list,a=>dv(a.spend,a.follows),'lo');
+  if(V&&F&&V.a!==F.a) out.push(`방문은 ${n(V.a)}${jg(V.a.name)} 방문당 ₩${full(V.v)}으로 가장 싸게 데려왔지만, 팔로우당 비용은 ${n(F.a)}${jg(F.a.name)} ₩${full(F.v)}로 가장 낮아요. <b>방문 효율과 팔로우 효율이 다른 광고에서 나왔어요</b> — 팔로워를 늘리는 게 목적이라면 방문 수보다 팔로우 전환을 기준으로 소재를 고르세요.`);
+  else if(V&&F) out.push(`${n(V.a)}${jg(V.a.name)} 방문당 ₩${full(V.v)}, 팔로우당 ₩${full(F.v)}로 방문과 팔로우 모두 가장 효율적이에요.`);
+  else if(V) out.push(`방문당 비용은 ${n(V.a)}${jg(V.a.name)} ₩${full(V.v)}로 가장 낮아요. 팔로우 수를 넣으면 팔로우 효율도 비교해 드려요.`);
+  const C=adBest(list,a=>dv(a.follows,a.visits),'hi'), Cw=adBest(list,a=>dv(a.follows,a.visits),'lo');
+  if(C&&Cw&&Cw.v>0) out.push(`프로필에 들어온 사람 중 팔로우한 비율은 ${n(C.a)} ${pct(C.v)}, ${n(Cw.a)} ${pct(Cw.v)}로 <b>${(C.v/Cw.v).toFixed(1)}배</b> 차이예요.`);
+  else if(C) out.push(`방문 → 팔로우 전환율은 ${n(C.a)}${jg(C.a.name)} ${pct(C.v)}로 가장 높아요.`);
+  const H=adBest(list,a=>dv(a.plays3,a.views),'hi'), Hw=adBest(list,a=>dv(a.plays3,a.views),'lo');
+  if(H&&Hw&&Hw.v>0) out.push(`첫 3초를 넘긴 비율은 ${n(H.a)} ${pct(H.v)}, ${n(Hw.a)} ${pct(Hw.v)}로 ${(H.v/Hw.v).toFixed(1)}배예요. 첫 장면의 훅이 강한 소재일수록 사람들이 덜 넘겨요.`);
+  const S=adBest(list,a=>(a.saves||0)+(a.shares||0),'hi');
+  if(S) out.push(`저장 + 공유는 ${n(S.a)}${jg(S.a.name)} ${full(S.v)}회로 가장 많아요. 다시 볼 가치가 있다고 느낀 반응이에요.`);
+  return out;
+}
+const AD_NUM=['daily','spend','views','reach','plays3','visits','follows','likes','saves','shares','comments'], AD_TXT=['name','start','end','goal','target','audience','memo'];
+let editingAd=null;
+function openAd(id){
+  editingAd=id||null; const a=ads.find(x=>x.id===id)||{};
+  const f=$('#adForm'); f.reset();
+  [...AD_TXT,...AD_NUM].forEach(k=>{ if(a[k]!=null) f.elements[k].value=a[k]; });
+  if(!a.goal) f.elements.goal.value='프로필 방문';
+  $('#adDlgTitle').textContent=id?'광고 편집':'광고 추가';
+  $('#adDel').classList.toggle('hidden',!id);
+  $('#adDlg').showModal();
+}
+document.querySelectorAll('.newAdBtn').forEach(b=>b.addEventListener('click',()=>openAd()));
+$('#adCancel').addEventListener('click',()=>$('#adDlg').close());
+$('#adSave').addEventListener('click',()=>{
+  const f=$('#adForm'); if(!f.reportValidity()) return;
+  const o={}; AD_TXT.forEach(k=>o[k]=f.elements[k].value.trim()); AD_NUM.forEach(k=>{ const v=f.elements[k].value; o[k]=v===''?null:+v; });
+  const cur=ads.find(x=>x.id===editingAd);
+  if(cur) Object.assign(cur,o); else ads.push({id:uid(),createdAt:Date.now(),...o});
+  saveAds(); $('#adDlg').close(); renderAds(); toast('광고를 저장했어요');
+});
+$('#adDel').addEventListener('click',async ()=>{
+  if(!editingAd || !(await ask('이 광고를 삭제할까요?',{ok:'삭제'}))) return;
+  ads=ads.filter(x=>x.id!==editingAd); adOff.delete(editingAd); saveAds(); $('#adDlg').close(); renderAds();
+});
+$('#tab-ads').addEventListener('click',e=>{
+  const t=e.target.closest('[data-adtoggle]'); if(t){ const id=t.dataset.adtoggle; adOff.has(id)?adOff.delete(id):adOff.add(id); renderAds(); return; }
+  const ed=e.target.closest('[data-adedit]'); if(ed) openAd(ed.dataset.adedit);
+});
+function sampleAds(){
+  const day=n=>{ const d=new Date(); d.setDate(d.getDate()+n); return ymd(d); };
+  return [
+    {id:uid(),createdAt:Date.now(),name:'A · 썰 릴스',start:day(-12),end:day(-7),goal:'프로필 방문',daily:5000,target:'20~35세 · 토크쇼 · 웹툰 · 유머',spend:25000,views:5800,reach:5150,plays3:2780,visits:810,follows:4,likes:24,saves:2,shares:9,comments:3,audience:'18~24세 52% · 여성 58%',memo:''},
+    {id:uid(),createdAt:Date.now(),name:'B · 정보형 릴스',start:day(-12),end:day(-7),goal:'프로필 방문',daily:5000,target:'20~35세 · 자기 계발 · 커리어 · 운동',spend:25000,views:3400,reach:2760,plays3:770,visits:240,follows:13,likes:41,saves:50,shares:31,comments:20,audience:'25~34세 57% · 여성 66%',memo:''},
+    {id:uid(),createdAt:Date.now(),name:'C · 브이로그',start:day(-6),end:day(-2),goal:'프로필 방문',daily:4000,target:'20~35세 · 여행 · 카페 · 일상',spend:16000,views:2900,reach:2500,plays3:1100,visits:260,follows:6,likes:30,saves:8,shares:5,comments:6,audience:'25~34세 49% · 여성 63%',memo:''},
+  ];
+}
+
 /* ================= 백업 ================= */
 $('#backupBtn').addEventListener('click',()=>{
   if(DEMO) return toast('데모라 저장하지 않았어요 — 실제로 쓸 때는 이 버튼으로 백업 파일이 저장돼요');
-  download(`콘텐츠매니저_백업_${ymd(new Date())}.json`, JSON.stringify({app:'content-manager',version:1,savedAt:new Date().toISOString(),posts,plans,refs,goals},null,1),'application/json');
+  download(`콘텐츠매니저_백업_${ymd(new Date())}.json`, JSON.stringify({app:'content-manager',version:1,savedAt:new Date().toISOString(),posts,plans,refs,goals,ads},null,1),'application/json');
   nudgeMem.last=Date.now(); store('cm-last-backup',nudgeMem.last); renderNudge(); toast('백업 파일을 저장했어요');
 });
 const nudgeMem={last:0,snooze:0};
@@ -1998,7 +2198,7 @@ $('#restoreFile').addEventListener('change',e=>{
   r.onload=async ()=>{ try{
       const d=JSON.parse(r.result); if(!Array.isArray(d.posts)||!Array.isArray(d.plans)||!Array.isArray(d.refs)) throw 0;
       if(!(await ask(`백업을 불러오면 지금 데이터가 바뀌어요.\n기획안 ${d.plans.length}개 · 성과 ${d.posts.length}개 · 레퍼런스 ${d.refs.length}개\n계속할까요?`,{ok:'불러오기',danger:false}))) return;
-      posts=d.posts; plans=d.plans; refs=d.refs; if(Array.isArray(d.goals)){ goals=d.goals; goalSel=null; saveGoals(); } migAll(); saveAll(); renderTab(); toast('백업을 불러왔어요');
+      posts=d.posts; plans=d.plans; refs=d.refs; if(Array.isArray(d.goals)){ goals=d.goals; goalSel=null; saveGoals(); } if(Array.isArray(d.ads)){ ads=d.ads; saveAds(); } migAll(); saveAll(); renderTab(); toast('백업을 불러왔어요');
     }catch(err){ toast('백업 파일 형식이 아니에요'); } };
   r.readAsText(f,'utf-8'); e.target.value='';
 });
@@ -2100,14 +2300,14 @@ new MutationObserver(()=>tab==='perf'&&renderPerf()).observe(document.documentEl
 /* 첫 실행: 아무 데이터도 없으면 성과 탭의 시작 안내부터 */
 if(!posts.length && !plans.length && !refs.length) tab='perf';
 if(DEMO){
-  const s=makeSample(); posts=s.sp; plans=s.pl; refs=s.rf; goals=sampleGoals();
+  const s=makeSample(); posts=s.sp; plans=s.pl; refs=s.rf; goals=sampleGoals(); ads=sampleAds();
   const bar=document.createElement('div'); bar.className='notice demo-bar';
   bar.innerHTML=`<span>👀 <b>데모 화면이에요.</b> 가상의 샘플 데이터로 채운 예시라 실제 계정 숫자가 아니고, 여기서 바꾼 내용은 저장되지 않아요. 탭을 눌러 둘러보세요.</span><a class="btn sm primary" href="${esc(location.pathname)}">내 데이터로 시작하기 →</a>`;
   $('#backupNudge').before(bar);
   $('#csvGuide')?.removeAttribute('open');
   showTab('perf');
 } else {
-  showTab(['board','cal','perf','deep','refs'].includes(tab)?tab:'board');
+  showTab(['board','cal','perf','deep','ads','refs'].includes(tab)?tab:'board');
   if(!posts.length && !plans.length && !refs.length && !load('cm-seen-help',0)) $('#helpDlg').showModal();
 }
 })();
