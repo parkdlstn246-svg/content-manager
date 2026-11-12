@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="ko">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-P4GGBXXF1E"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-P4GGBXXF1E');
+  function gaTrack(name, params){ try{ gtag('event', name, params || {}); }catch(e){} }
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>콘텐츠 매니저 &amp; 계정 성장 노트</title>
@@ -873,6 +882,7 @@ td.best{font-weight:700;color:var(--text)}
 /* ================= 공통 ================= */
 const K = { posts:'ig-analytics-posts-v1', plans:'cm-plans-v1', refs:'cm-refs-v1', tab:'cm-tab' };
 const DEMO = /(^|[?&#])demo\b/.test(location.search+' '+location.hash) || /[?&#]demo\b/.test(location.href);
+if(DEMO) gaTrack('demo_view');
 const load = (k,d) => { if(DEMO) return d; try{ const v=JSON.parse(localStorage.getItem(k)); return v ?? d; }catch(e){ return d; } };
 const store = (k,v) => { if(DEMO) return; try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
 let posts = load(K.posts, []), plans = load(K.plans, []), refs = load(K.refs, []);
@@ -1153,8 +1163,9 @@ function fbWebUrl(){
   if(t) q.set('entry.'+FORM_ENTRY[fbKind],t); if(c) q.set('entry.'+FORM_CONTACT,c);
   return FORM_BASE+'?'+q.toString();
 }
-$('#fbWeb').addEventListener('click',()=>{ $('#fbWeb').href=fbWebUrl(); setTimeout(()=>{ $('#fbDlg').close(); $('#fbText').value=''; $('#fbContact').value=''; toast('구글 폼에서 제출을 눌러 주세요. 고마워요!'); },300); });
+$('#fbWeb').addEventListener('click',()=>{ gaTrack('feedback_send', {method:'form', kind:fbKind}); $('#fbWeb').href=fbWebUrl(); setTimeout(()=>{ $('#fbDlg').close(); $('#fbText').value=''; $('#fbContact').value=''; toast('구글 폼에서 제출을 눌러 주세요. 고마워요!'); },300); });
 $('#fbSend').addEventListener('click',()=>{
+  gaTrack('feedback_send', {method:'dm', kind:fbKind});
   const t=$('#fbText').value.trim();
   const c=$('#fbContact').value.trim();
   const msg=`[콘텐츠 매니저 · ${fbKind}]\n${t||'(내용을 여기에 적어 주세요)'}`+(c?`\n연락처: ${c}`:'');
@@ -1553,6 +1564,7 @@ function importCSV(text){
   const linked=autoLink();
   if(added||updated) store('cm-last-import',Date.now());
   saveAll(); renderTab();
+  gaTrack('csv_upload', {added, updated});
   toast(`새 게시물 ${added}개 · 업데이트 ${updated}개`+(linked?` · 기획안 ${linked}개 자동 연결`:'')+(skipped?` (날짜 없는 ${skipped}행 제외)`:''));
 }
 /* 업로드 완료(또는 날짜 지난) 기획안 ↔ 같은 날·같은 유형 게시물 자동 연결 */
