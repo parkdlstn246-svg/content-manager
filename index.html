@@ -481,6 +481,7 @@ td.best{font-weight:700;color:var(--text)}
           <ul>
             <li>위의 파란 <b>CSV 불러오기</b> 버튼을 누르고 그 파일을 골라요.</li>
             <li>"새 게시물 ○개 · 업데이트 ○개" 알림이 뜨면 끝! 같은 게시물은 중복 없이 숫자만 최신으로 바뀌어요.</li>
+            <li>Meta CSV의 게시 시간은 <b>미국 시간</b>으로 적혀 있지만, 앱이 <b>한국 시간으로 자동으로 바꿔서</b> 요일·시간대를 분석해요.</li>
           </ul>
         </div>
       </div>
@@ -880,7 +881,21 @@ const saveAll = () => { store(K.posts,posts); store(K.plans,plans); store(K.refs
 const TYPES=['릴스','캐러셀·사진'];
 const TYPE_VAR={'릴스':'--s1','캐러셀·사진':'--s2'};
 const migT=t=> t==='캐러셀'||t==='사진' ? '캐러셀·사진' : t;
-const migAll=()=>{ let ch=false; [...posts,...plans].forEach(o=>{ const n=migT(o.type); if(n!==o.type){ o.type=n; ch=true; } }); return ch; };
+/* Meta CSV의 게시 시간은 미국 태평양 시간(서머타임 반영) → 실제 시각(UTC)으로 바꿔 저장하면 화면에는 한국 시간으로 보여요 */
+const META_TZ='America/Los_Angeles';
+function tzOffset(tz,t){
+  try{ const f=new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const o={}; f.formatToParts(new Date(t)).forEach(x=>o[x.type]=x.value);
+    return Date.UTC(+o.year,+o.month-1,+o.day,+o.hour%24,+o.minute,+o.second)-t; }catch(e){ return -8*36e5; }
+}
+function metaToISO(y,mo,d,h,mi){
+  const g=Date.UTC(y,mo-1,d,h,mi); let t=g-tzOffset(META_TZ,g); t=g-tzOffset(META_TZ,t);
+  return new Date(t).toISOString();
+}
+const migAll=()=>{ let ch=false; [...posts,...plans].forEach(o=>{ const n=migT(o.type); if(n!==o.type){ o.type=n; ch=true; } });
+  /* 예전에 Meta CSV 시간을 한국 시간으로 잘못 읽어 저장한 게시물 바로잡기 (게시물 ID가 있는 것 = Meta CSV) */
+  posts.forEach(o=>{ if(o.pid && !o.tz){ const d=new Date(o.date); if(!isNaN(d)){ o.date=metaToISO(d.getFullYear(),d.getMonth()+1,d.getDate(),d.getHours(),d.getMinutes()); o.tz='meta'; ch=true; } } });
+  return ch; };
 if(migAll()) saveAll();
 /* 받침에 따라 조사 고르기: josa('사진','이/가') → '사진이' */
 const josa=(w,pair)=>{ const [a,b]=pair.split('/'); const c=String(w).charCodeAt(String(w).length-1); const has=c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28!==0; if(pair==='으로/로'){ const rieul=has&&(c-0xAC00)%28===8; return w+(has&&!rieul?'으로':'로'); } return w+(has?a:b); };
@@ -1501,7 +1516,7 @@ function mapHeaders(h){
 }
 function normType(v){ const s=String(v||'').toLowerCase(); if(/릴|reel|video|동영상|영상/.test(s)) return '릴스'; return '캐러셀·사진'; }
 function num(v){ if(v==null) return 0; const n=parseFloat(String(v).replace(/[,\s]/g,'')); return isNaN(n)?0:n; }
-function parseDate(v){
+function parseDate(v,meta){
   let s=String(v||'').trim(); if(!s) return null;
   const pm=/오후|pm/i.test(s), am=/오전|am/i.test(s);
   s=s.replace(/오전|오후|am|pm/ig,'').trim();
@@ -1510,6 +1525,7 @@ function parseDate(v){
   else if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/))) [,mo,d,y,h=0,mi=0]=m;
   else { const t=Date.parse(s); return isNaN(t)?null:new Date(t).toISOString(); }
   h=+h; if(pm&&h<12) h+=12; if(am&&h==12) h=0;
+  if(meta) return metaToISO(+y,+mo,+d,h,+mi);
   const dt=new Date(+y,+mo-1,+d,h,+mi); return isNaN(dt)?null:dt.toISOString();
 }
 /* 같은 게시물 판별: 게시물 ID → 링크 → (게시 시각(분) + 유형) */
@@ -1524,13 +1540,14 @@ function importCSV(text){
   const map=mapHeaders(rows[0]);
   if(!map.includes('views') && !map.includes('reach')) return toast('조회수(또는 도달) 열을 찾지 못했어요');
   let added=0, updated=0, skipped=0;
+  const meta=map.includes('pid'); /* 게시물 ID 열이 있으면 Meta 내보내기 → 태평양 시간 */
   for(const r of rows.slice(1)){
     const o={}; map.forEach((k,i)=>{ if(k) o[k]=r[i]; });
-    const date=parseDate(o.date); if(!date){ skipped++; continue; }
-    const p={ date, type:normType(o.type), caption:cleanTitle(o.caption), body:String(o.caption||'').slice(0,2200), link:(o.link||'').trim(), pid:(o.pid||'').trim(), account:(o.account||'').trim(), duration:num(o.duration) };
+    const date=parseDate(o.date,meta); if(!date){ skipped++; continue; }
+    const p={ date, type:normType(o.type), caption:cleanTitle(o.caption), body:String(o.caption||'').slice(0,2200), link:(o.link||'').trim(), pid:(o.pid||'').trim(), account:(o.account||'').trim(), duration:num(o.duration), ...(meta?{tz:'meta'}:{}) };
     METRICS.forEach(k=>p[k]=num(o[k]));
     const ex=findSame(p);
-    if(ex){ METRICS.forEach(k=>{ if(map.includes(k)) ex[k]=p[k]; }); ['caption','body','link','pid','account','duration'].forEach(k=>{ if(p[k]) ex[k]=p[k]; }); updated++; }
+    if(ex){ METRICS.forEach(k=>{ if(map.includes(k)) ex[k]=p[k]; }); ['caption','body','link','pid','account','duration'].forEach(k=>{ if(p[k]) ex[k]=p[k]; }); if(meta){ ex.date=p.date; ex.tz='meta'; } updated++; }
     else { posts.push({id:uid(),...p}); added++; }
   }
   const linked=autoLink();
